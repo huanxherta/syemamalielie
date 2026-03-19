@@ -194,9 +194,11 @@ class ProfanityMonitor(Star):
             <h2 style="margin-bottom: 15px; color: #333;">最近记录</h2>
             <div class="btn-group">
                 <button class="btn" onclick="loadRecords()">刷新数据</button>
-                <button class="btn" onclick="selectAll()">全选</button>
-                <button class="btn" onclick="selectNone()">取消全选</button>
-                <button class="btn danger-btn" onclick="deleteSelected()" id="deleteSelectedBtn" style="display: none;">删除选中 (<span id="selectedCount">0</span>)</button>
+                <span id="adminBtns" style="display: none;">
+                    <button class="btn" onclick="selectAll()">全选</button>
+                    <button class="btn" onclick="selectNone()">取消全选</button>
+                    <button class="btn danger-btn" onclick="deleteSelected()" id="deleteSelectedBtn" style="display: none;">删除选中 (<span id="selectedCount">0</span>)</button>
+                </span>
             </div>
             <div id="records"><div class="loading">点击按钮加载数据</div></div>
         </div>
@@ -215,12 +217,13 @@ class ProfanityMonitor(Star):
                 const groups = new Set(records.map(r => r.group_id));
                 document.getElementById('users').textContent = users.size;
                 document.getElementById('groups').textContent = groups.size;
+                const isLoggedIn = !!window.adminToken;
                 const html = records.slice(-20).reverse().map((r, displayIdx) => {
                     const realIdx = records.length - 1 - displayIdx;
                     return `
                     <div class="record-item" id="record-${realIdx}">
                         <div style="display: flex; align-items: flex-start; gap: 10px;">
-                            <input type="checkbox" class="record-checkbox" data-index="${realIdx}" onchange="toggleSelect(${realIdx})" style="margin-top: 5px;">
+                            ${isLoggedIn ? `<input type="checkbox" class="record-checkbox" data-index="${realIdx}" onchange="toggleSelect(${realIdx})" style="margin-top: 5px;">` : ''}
                             <div style="flex: 1;">
                                 <div style="display: flex; align-items: center; margin-bottom: 8px;">
                                     <img src="${getAvatarUrl(r.user_id)}" style="width: 32px; height: 32px; border-radius: 50%; margin-right: 10px;" onerror="this.style.display='none'">
@@ -233,7 +236,7 @@ class ProfanityMonitor(Star):
                                 <div class="record-reason">${r.reason}</div>
                                 <div class="record-time">${new Date(r.time).toLocaleString('zh-CN')}</div>
                             </div>
-                            <button class="btn danger-btn" onclick="deleteSingle(${realIdx})" style="padding: 5px 10px; font-size: 12px;">删除</button>
+                            ${isLoggedIn ? `<button class="btn danger-btn" onclick="deleteSingle(${realIdx})" style="padding: 5px 10px; font-size: 12px;">删除</button>` : ''}
                         </div>
                     </div>
                 `}).join('');
@@ -381,10 +384,13 @@ class ProfanityMonitor(Star):
             if (adminToken) {
                 document.getElementById('loginSection').style.display = 'none';
                 document.getElementById('adminSection').style.display = 'block';
+                document.getElementById('adminBtns').style.display = 'inline';
             } else {
                 document.getElementById('loginSection').style.display = 'block';
                 document.getElementById('adminSection').style.display = 'none';
+                document.getElementById('adminBtns').style.display = 'none';
             }
+            loadRecords();
         }
         async function login() {
             const password = document.getElementById('loginPassword').value;
