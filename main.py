@@ -116,9 +116,9 @@ class ProfanityMonitor(Star):
             --md-shadow: 0 1px 3px 1px rgba(0,0,0,0.15), 0 1px 2px rgba(0,0,0,0.3);
             --md-shadow-lg: 0 4px 8px 3px rgba(0,0,0,0.15), 0 1px 3px rgba(0,0,0,0.3);
         }
-        body { font-family: 'Google Sans', 'Roboto', 'Noto Sans SC', sans-serif; background: var(--md-surface); min-height: 100vh; padding: 16px; }
+        body { font-family: 'Google Sans', 'Roboto', 'Noto Sans SC', sans-serif; background: url('https://imgbed.iqach.top/file/1773915308321_92650004_p0.jpg') no-repeat center center fixed; background-size: cover; min-height: 100vh; padding: 16px; }
         .container { max-width: 840px; margin: 0 auto; }
-        .card { background: var(--md-surface); border-radius: 28px; padding: 24px; margin-bottom: 16px; box-shadow: var(--md-shadow); }
+        .card { background: rgba(254, 247, 255, 0.92); backdrop-filter: blur(20px); border-radius: 28px; padding: 24px; margin-bottom: 16px; box-shadow: var(--md-shadow); }
         h1 { color: var(--md-primary); text-align: center; margin-bottom: 24px; font-size: 28px; font-weight: 400; letter-spacing: 0.5px; }
         h2 { color: var(--md-on-surface) !important; font-size: 16px !important; font-weight: 500 !important; letter-spacing: 0.15px; }
         .btn { background: var(--md-primary); color: var(--md-on-primary); border: none; padding: 10px 24px; border-radius: 20px; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.2s; box-shadow: var(--md-shadow); letter-spacing: 0.1px; }
@@ -748,6 +748,11 @@ class ProfanityMonitor(Star):
                             user_name = info["nickname"]
                 except:
                     pass
+                # 如果获取到群名，更新同一群号的所有旧记录
+                if group_name:
+                    for r in self.records:
+                        if r.get("group_id") == group_id and not r.get("group_name"):
+                            r["group_name"] = group_name
                 record = {
                     "time": datetime.now().isoformat(),
                     "group_id": group_id,
