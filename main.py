@@ -132,6 +132,11 @@ class ProfanityMonitor(Star):
         .ranking-other { background: #f0f0f0; color: #666; }
         .ranking-info { flex: 1; }
         .ranking-name { font-weight: bold; color: #333; }
+        .ranking-qq { font-size: 12px; color: #999; margin-top: 2px; }
+        .ranking-group { font-size: 12px; color: #999; margin-top: 2px; }
+        .ranking-count { font-size: 20px; font-weight: bold; color: #e74c3c; }
+        .ranking-count span { font-size: 12px; color: #999; }
+        .ranking-avatar { width: 40px; height: 40px; border-radius: 50%; margin-right: 12px; object-fit: cover; }
         .ranking-group { font-size: 12px; color: #999; margin-top: 2px; }
         .ranking-count { font-size: 20px; font-weight: bold; color: #e74c3c; }
         .ranking-count span { font-size: 12px; color: #999; }
@@ -205,7 +210,13 @@ class ProfanityMonitor(Star):
                 document.getElementById('groups').textContent = groups.size;
                 const html = records.slice(-20).reverse().map(r => `
                     <div class="record-item">
-                        <div class="record-user">${r.user_name}</div>
+                        <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                            <img src="${getAvatarUrl(r.user_id)}" style="width: 32px; height: 32px; border-radius: 50%; margin-right: 10px;" onerror="this.style.display='none'">
+                            <div>
+                                <div class="record-user">${r.user_name}</div>
+                                <div style="font-size: 12px; color: #999;">QQ: ${maskQQ(r.user_id)}</div>
+                            </div>
+                        </div>
                         <div class="record-msg">${r.message}</div>
                         <div class="record-reason">${r.reason}</div>
                         <div class="record-time">${new Date(r.time).toLocaleString('zh-CN')}</div>
@@ -223,6 +234,15 @@ class ProfanityMonitor(Star):
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             event.target.classList.add('active');
             updateRanking(tab);
+        }
+        function maskQQ(qq) {
+            const s = String(qq);
+            if (s.length <= 4) return s;
+            if (s.length <= 7) return s.slice(0, 2) + '***' + s.slice(-1);
+            return s.slice(0, 3) + '***' + s.slice(-3);
+        }
+        function getAvatarUrl(qq) {
+            return `https://q.qlogo.cn/headimg_dl?dst_uin=${qq}&spec=640`;
         }
         function updateRanking(type) {
             const records = window.records || [];
@@ -256,8 +276,10 @@ class ProfanityMonitor(Star):
                 return `
                     <div class="ranking-item">
                         <div class="ranking-num ${rankClass}">${index + 1}</div>
+                        <img class="ranking-avatar" src="${getAvatarUrl(info.qq)}" onerror="this.style.display='none'">
                         <div class="ranking-info">
-                            <div class="ranking-name">${info.name} (${info.qq})</div>
+                            <div class="ranking-name">${info.name}</div>
+                            <div class="ranking-qq">QQ: ${maskQQ(info.qq)}</div>
                             <div class="ranking-group">涉及 ${groupInfo}</div>
                         </div>
                         <div class="ranking-count">${info.count}<span>次</span></div>
@@ -494,17 +516,28 @@ class ProfanityMonitor(Star):
             response_text = llm_result.completion_text
             result = json.loads(response_text)
             if result.get("is_profanity"):
+                user_id = event.get_sender_id()
+                user_name = event.get_sender_name()
+                # 尝试获取真实昵称
+                try:
+                    client = event.bot
+                    if hasattr(client, "get_stranger_info"):
+                        info = await client.get_stranger_info(user_id=int(user_id))
+                        if info and "nickname" in info:
+                            user_name = info["nickname"]
+                except:
+                    pass
                 record = {
                     "time": datetime.now().isoformat(),
                     "group_id": group_id,
-                    "user_id": event.get_sender_id(),  # QQ号
-                    "user_name": event.get_sender_name(),
+                    "user_id": user_id,
+                    "user_name": user_name,
                     "message": message_str,
                     "reason": result.get("reason", ""),
                 }
                 self.records.append(record)
                 self._save_records()
-                logger.info(f"检测到脏话: {event.get_sender_name()} - {message_str}")
+                logger.info(f"检测到脏话: {user_name}({user_id}) - {message_str}")
         except Exception as e:
             logger.error(f"LLM分析失败: {e}")
 
