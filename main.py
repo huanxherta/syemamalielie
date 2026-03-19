@@ -24,6 +24,8 @@ class ProfanityMonitor(Star):
         self.http_runner = None
         self.http_site = None
         self.provider_id = config.get("provider_id", "")
+        self.enable_groups = config.get("enable_groups", [])
+        self.ignore_groups = config.get("ignore_groups", [])
         self.enable_http = config.get("enable_http_api", False)
         self.host = config.get("http_host", "0.0.0.0")
         self.port = config.get("http_port", 10050)
@@ -168,16 +170,55 @@ class ProfanityMonitor(Star):
         return web.json_response({"code": 0, "data": self.records})
 
     async def _handle_get_stats(self, request: web.Request) -> web.Response:
-        stats = {}
+        # 按群统计
+        group_stats = {}
+        # 按人统计
+        user_stats = {}
         for r in self.records:
+            gid = r.get("group_id", "unknown")
             uid = r.get("user_id", "unknown")
-            if uid not in stats:
-                stats[uid] = {"user_name": r.get("user_name", ""), "count": 0}
-            stats[uid]["count"] += 1
-        return web.json_response({"code": 0, "data": stats})
+            # 按群统计
+            if gid not in group_stats:
+                group_stats[gid] = {"count": 0, "users": {}}
+            group_stats[gid]["count"] += 1
+            # 按人统计（全局）
+            if uid not in user_stats:
+                user_stats[uid] = {
+                    "user_name": r.get("user_name", ""),
+                    "count": 0,
+                    "groups": {},
+                }
+            user_stats[uid]["count"] += 1
+            # 按人统计（分群）
+            if gid not in user_stats[uid]["groups"]:
+                user_stats[uid]["groups"][gid] = 0
+            user_stats[uid]["groups"][gid] += 1
+            # 按人统计（分群内）
+            if uid not in group_stats[gid]["users"]:
+                group_stats[gid]["users"][uid] = {
+                    "user_name": r.get("user_name", ""),
+                    "count": 0,
+                }
+            group_stats[gid]["users"][uid]["count"] += 1
+        return web.json_response(
+            {
+                "code": 0,
+                "data": {
+                    "total": len(self.records),
+                    "group_stats": group_stats,
+                    "user_stats": user_stats,
+                },
+            }
+        )
 
     @filter.event_message_type(EventMessageType.GROUP_MESSAGE)
     async def on_group_message(self, event: AstrMessageEvent):
+        group_id = event.get_group_id()
+        # 群聊过滤
+        if self.ignore_groups and group_id in self.ignore_groups:
+            return
+        if self.enable_groups and group_id not in self.enable_groups:
+            return
         message_str = event.message_str.strip()
         if not message_str:
             return
@@ -200,7 +241,7 @@ class ProfanityMonitor(Star):
             if result.get("is_profanity"):
                 record = {
                     "time": datetime.now().isoformat(),
-                    "group_id": event.get_group_id(),
+                    "group_id": group_id,
                     "user_id": event.get_sender_id(),
                     "user_name": event.get_sender_name(),
                     "message": message_str,

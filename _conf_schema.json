@@ -5,6 +5,18 @@
     "hint": "选择用于分析脏话的LLM模型",
     "_special": "select_provider"
   },
+  "enable_groups": {
+    "description": "启用监控的群聊ID列表",
+    "type": "list",
+    "default": [],
+    "hint": "留空表示监控所有群聊，填写群聊ID则只监控指定群聊"
+  },
+  "ignore_groups": {
+    "description": "忽略监控的群聊ID列表",
+    "type": "list",
+    "default": [],
+    "hint": "填写的群聊ID将不会被监控"
+  },
   "enable_http_api": {
     "description": "是否启用HTTP API",
     "type": "bool",
