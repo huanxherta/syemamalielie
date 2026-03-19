@@ -25,15 +25,10 @@ class ProfanityMonitor(Star):
         self.http_site = None
         self.provider_id = config.get("provider_id", "")
         self.custom_prompt = config.get("custom_prompt", "") or (
-            "请判断以下消息是否包含脏话、辱骂、侮辱性词汇，包括但不限于：\n"
-            "1. 直接的脏话粗口 2. 谐音替代（如tm、卧槽、尼玛等）\n"
-            "3. 拼音首字母缩写（如nmsl、wc等）4. 黑话暗语\n"
-            "5. 网络流行梗中的侮辱性表达 6. 符号替代（如*、#等）\n\n"
-            "注意以下情况不算脏话：\n"
-            "- @某人的消息，如 '@用户名' 或 '@用户名(QQ号)'\n"
-            "- 用户昵称、群名片中的文字\n"
-            "- 正常的聊天内容\n\n"
-            '只回复一个JSON对象：{"is_profanity": true/false, "reason": "原因"}。\n'
+            "你是一个内容审核助手，请判断以下消息是否属于不当言论。\n"
+            "不当言论包括：粗俗用语、人身攻击、侮辱性称呼、恶意诅咒等。\n"
+            "注意区分：1) @功能提及用户 2) 用户昵称本身 3) 正常玩笑或网络用语\n\n"
+            '请仅返回JSON格式：{"is_profanity": true/false, "reason": "简短原因"}\n\n'
             "消息内容：{message}"
         )
         self.enable_groups = config.get("enable_groups", [])
@@ -184,174 +179,57 @@ class ProfanityMonitor(Star):
         .ios-footer a { color: var(--ios-blue); text-decoration: none; }
         .ios-pw-group { display: flex; gap: 8px; padding: 0 16px 12px; }
         .ios-pw-group input { flex: 1; }
+        .tabbar { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(255,255,255,0.95); backdrop-filter: blur(20px); border-top: 0.5px solid var(--ios-separator); display: flex; justify-content: space-around; padding: 8px 0 env(safe-area-inset-bottom); }
+        .tabbar-item { display: flex; flex-direction: column; align-items: center; gap: 2px; background: none; border: none; cursor: pointer; padding: 4px 16px; color: var(--ios-gray); }
+        .tabbar-item.active { color: var(--ios-blue); }
+        .tabbar-icon { font-size: 22px; }
+        .tabbar-label { font-size: 10px; font-weight: 500; }
+        .page { display: none; padding-bottom: 80px; }
+        .page.active { display: block; }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="ios-header"><h1>监控</h1></div>
-        <div class="ios-section">
-            <div class="ios-stats">
-                <div class="ios-stat"><div class="ios-stat-num" id="total">-</div><div class="ios-stat-label">总记录</div></div>
-                <div class="ios-stat"><div class="ios-stat-num" id="users">-</div><div class="ios-stat-label">用户</div></div>
-                <div class="ios-stat"><div class="ios-stat-num" id="groups">-</div><div class="ios-stat-label">群组</div></div>
-            </div>
+        <div id="page-overview" class="page active">
+            <div class="ios-header"><h1>概览</h1></div>
+            <div class="ios-section"><div class="ios-stats"><div class="ios-stat"><div class="ios-stat-num" id="total">-</div><div class="ios-stat-label">总记录</div></div><div class="ios-stat"><div class="ios-stat-num" id="users">-</div><div class="ios-stat-label">用户</div></div><div class="ios-stat"><div class="ios-stat-num" id="groups">-</div><div class="ios-stat-label">群组</div></div></div></div>
+            <div class="ios-section"><div class="ios-section-header">排行榜</div><div class="ios-tabs"><button class="ios-tab active" onclick="switchTab('global')">总榜</button><select class="ios-select" id="groupSelect" onchange="switchTab('group')"><option value="">选择群聊</option></select></div><div id="ranking"><div class="loading">加载中...</div></div></div>
         </div>
-        <div class="ios-section">
-            <div class="ios-section-header">排行榜</div>
-            <div class="ios-tabs">
-                <button class="ios-tab active" onclick="switchTab('global')">总榜</button>
-                <select class="ios-select" id="groupSelect" onchange="switchTab('group')"><option value="">选择群聊</option></select>
-            </div>
-            <div id="ranking"><div class="loading">加载中...</div></div>
+        <div id="page-records" class="page">
+            <div class="ios-header"><h1>记录</h1></div>
+            <div class="ios-section"><div class="ios-search"><span class="ios-search-icon">&#128269;</span><input class="ios-input" id="searchInput" placeholder="搜索..." oninput="filterRecords()"></div><div class="ios-tabs"><button class="ios-tab active" onclick="switchRecordTab('all')">全部</button><select class="ios-select" id="recordGroupSelect" onchange="switchRecordTab('group')"><option value="">选择群聊</option></select></div><div class="ios-btns"><button class="ios-btn ios-btn-gray" onclick="loadRecords()">刷新</button><span id="adminBtns" style="display:none;"><button class="ios-btn ios-btn-gray" onclick="selectAll()">全选</button><button class="ios-btn ios-btn-gray" onclick="selectNone()">取消</button><button class="ios-btn ios-btn-red" onclick="deleteSelected()" id="deleteSelectedBtn" style="display:none;">删除(<span id="selectedCount">0</span>)</button></span></div><div id="records"><div class="loading">点击刷新</div></div></div>
         </div>
-        <div class="ios-section">
-            <div class="ios-section-header">记录</div>
-            <div class="ios-search">
-                <span class="ios-search-icon">&#128269;</span>
-                <input class="ios-input" id="searchInput" placeholder="搜索..." oninput="filterRecords()">
-            </div>
-            <div class="ios-tabs">
-                <button class="ios-tab active" onclick="switchRecordTab('all')">全部</button>
-                <select class="ios-select" id="recordGroupSelect" onchange="switchRecordTab('group')"><option value="">选择群聊</option></select>
-            </div>
-            <div class="ios-btns">
-                <button class="ios-btn ios-btn-gray" onclick="loadRecords()">刷新</button>
-                <span id="adminBtns" style="display:none;">
-                    <button class="ios-btn ios-btn-gray" onclick="selectAll()">全选</button>
-                    <button class="ios-btn ios-btn-gray" onclick="selectNone()">取消</button>
-                    <button class="ios-btn ios-btn-red" onclick="deleteSelected()" id="deleteSelectedBtn" style="display:none;">删除(<span id="selectedCount">0</span>)</button>
-                </span>
-            </div>
-            <div id="records"><div class="loading">点击刷新</div></div>
-        </div>
-        <div class="ios-section">
-            <div class="ios-section-header">管理</div>
-            <div id="loginSection">
-                <div class="ios-pw-group">
-                    <input type="password" class="ios-input" id="loginPassword" placeholder="管理密码">
-                    <button class="ios-btn ios-btn-primary" onclick="login()">登录</button>
-                </div>
-            </div>
-            <div id="adminSection" style="display:none;">
-                <div class="ios-btns">
-                    <button class="ios-btn ios-btn-red" onclick="clearRecords()">清空全部</button>
-                    <button class="ios-btn ios-btn-gray" onclick="logout()">退出</button>
-                </div>
-            </div>
-        </div>
-        <div class="ios-footer">
-            <a href="/records">/records</a> · <a href="/stats">/stats</a> · <a href="https://github.com/huanxherta/syemamalielie">GitHub</a>
+        <div id="page-settings" class="page">
+            <div class="ios-header"><h1>设置</h1></div>
+            <div class="ios-section"><div class="ios-section-header">管理</div><div id="loginSection"><div class="ios-pw-group"><input type="password" class="ios-input" id="loginPassword" placeholder="管理密码"><button class="ios-btn ios-btn-primary" onclick="login()">登录</button></div></div><div id="adminSection" style="display:none;"><div class="ios-btns"><button class="ios-btn ios-btn-red" onclick="clearRecords()">清空全部</button><button class="ios-btn ios-btn-gray" onclick="logout()">退出</button></div></div></div>
+            <div class="ios-section"><div class="ios-section-header">API</div><div class="ios-row" onclick="window.open('/records')"><div class="ios-row-content"><div class="ios-row-title">/records</div><div class="ios-row-subtitle">获取记录</div></div><div class="ios-row-arrow">›</div></div><div class="ios-row" onclick="window.open('/stats')"><div class="ios-row-content"><div class="ios-row-title">/stats</div><div class="ios-row-subtitle">获取统计</div></div><div class="ios-row-arrow">›</div></div></div>
+            <div class="ios-section"><div class="ios-section-header">关于</div><div class="ios-row" onclick="window.open('https://github.com/huanxherta/syemamalielie')"><div class="ios-row-content"><div class="ios-row-title">GitHub</div><div class="ios-row-subtitle">项目主页</div></div><div class="ios-row-arrow">›</div></div></div>
         </div>
     </div>
+    <div class="tabbar"><button class="tabbar-item active" onclick="switchPage('overview',this)"><span class="tabbar-icon">&#128200;</span><span class="tabbar-label">概览</span></button><button class="tabbar-item" onclick="switchPage('records',this)"><span class="tabbar-icon">&#128196;</span><span class="tabbar-label">记录</span></button><button class="tabbar-item" onclick="switchPage('settings',this)"><span class="tabbar-icon">&#9881;</span><span class="tabbar-label">设置</span></button></div>
     <script>
-        window.allRecords = [];
-        window.currentRecordGroup = '';
-        function getGroupName(r) {
-            if (r.group_name && r.group_name.trim()) return r.group_name.trim();
-            return '群' + r.group_id;
-        }
-        function switchRecordTab(type) {
-            window.currentRecordGroup = type === 'all' ? '' : document.getElementById('recordGroupSelect').value;
-            filterRecords();
-        }
-        function filterRecords() {
-            const kw = document.getElementById('searchInput').value.toLowerCase();
-            let records = window.allRecords || [];
-            if (window.currentRecordGroup) records = records.filter(r => r.group_id === window.currentRecordGroup);
-            if (kw) records = records.filter(r => 
-                (r.message||'').toLowerCase().includes(kw) ||
-                (r.user_name||'').toLowerCase().includes(kw) ||
-                (r.user_id||'').toString().includes(kw) ||
-                getGroupName(r).toLowerCase().includes(kw) ||
-                (r.reason||'').toLowerCase().includes(kw)
-            );
-            renderRecords(records.slice(-50).reverse(), records.length);
-        }
-        function renderRecords(records, total) {
-            const logged = !!window.adminToken;
-            document.getElementById('records').innerHTML = records.length ? records.map((r,i) => `
-                <div class="ios-row" id="record-${total-1-i}">
-                    ${logged ? `<input type="checkbox" class="record-checkbox" data-index="${total-1-i}" onchange="toggleSelect(${total-1-i})">` : ''}
-                    <img class="record-avatar" src="https://q.qlogo.cn/headimg_dl?dst_uin=${r.user_id}&spec=640" onerror="this.style.display='none'">
-                    <div class="ios-row-content">
-                        <div class="ios-row-title">${r.user_name}</div>
-                        <div class="ios-row-subtitle">${getGroupName(r)} · ${new Date(r.time).toLocaleString('zh-CN',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
-                        <div style="font-size:15px;color:var(--ios-label);margin-top:6px;word-break:break-all;">${r.message}</div>
-                        <div style="font-size:13px;color:var(--ios-orange);margin-top:4px;">${r.reason}</div>
-                    </div>
-                    ${logged ? `<button class="delete-text-btn" onclick="deleteSingle(${total-1-i})">删除</button>` : ''}
-                </div>
-            `).join('') : '<div class="loading">暂无记录</div>';
-        }
-        function updateRecordGroupSelect() {
-            const map = {};
-            (window.allRecords||[]).forEach(r => { if(!map[r.group_id]) map[r.group_id] = getGroupName(r); });
-            const sel = document.getElementById('recordGroupSelect');
-            sel.innerHTML = '<option value="">选择群聊</option>';
-            Object.entries(map).forEach(([id,name]) => { sel.innerHTML += `<option value="${id}">${name}</option>`; });
-        }
-        async function loadRecords() {
-            try {
-                const {data} = await (await fetch('/records')).json();
-                const nameMap = {};
-                (data||[]).forEach(r => { if(r.group_name && r.group_name.trim()) nameMap[r.group_id] = r.group_name.trim(); });
-                (data||[]).forEach(r => { if(!r.group_name && nameMap[r.group_id]) r.group_name = nameMap[r.group_id]; });
-                window.allRecords = data || [];
-                window.selectedIndices = new Set();
-                document.getElementById('total').textContent = data.length;
-                document.getElementById('users').textContent = new Set(data.map(r=>r.user_id)).size;
-                document.getElementById('groups').textContent = new Set(data.map(r=>r.group_id)).size;
-                updateRecordGroupSelect(); updateGroupSelect(); filterRecords(); updateDeleteBtn(); updateRanking('global');
-            } catch(e) { document.getElementById('records').innerHTML = '<div class="loading">加载失败</div>'; }
-        }
-        function toggleSelect(i) { window.selectedIndices.has(i) ? window.selectedIndices.delete(i) : window.selectedIndices.add(i); updateDeleteBtn(); }
-        function selectAll() { document.querySelectorAll('.record-checkbox').forEach(c=>{c.checked=true;window.selectedIndices.add(+c.dataset.index)}); updateDeleteBtn(); }
-        function selectNone() { document.querySelectorAll('.record-checkbox').forEach(c=>c.checked=false); window.selectedIndices.clear(); updateDeleteBtn(); }
-        function updateDeleteBtn() { const n=window.selectedIndices?.size||0; document.getElementById('selectedCount').textContent=n; document.getElementById('deleteSelectedBtn').style.display=n?'inline-block':'none'; }
-        async function deleteSingle(i) { if(!window.adminToken) return showToast('请先登录','error'); if(!confirm('确定删除？')) return; await doDelete([i]); }
-        async function deleteSelected() { if(!window.adminToken) return showToast('请先登录','error'); if(!window.selectedIndices.size) return showToast('请选择','error'); if(!confirm('删除'+window.selectedIndices.size+'条？')) return; await doDelete([...window.selectedIndices]); }
-        async function doDelete(idx) { try{const{code,msg}=await(await fetch('/delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:window.adminToken,indices:idx})})).json(); if(!code){showToast(msg,'success');loadRecords()}else{showToast(msg,'error');if(msg.includes('登录'))logout()}}catch(e){showToast('失败','error')} }
-        function switchTab(t) { if(t==='global'){document.getElementById('groupSelect').value=''} updateRanking(t); }
-        function maskQQ(q) { const s=String(q); return s.length<=4?s:s.slice(0,3)+'***'+s.slice(-3); }
-        function updateRanking(type) {
-            let recs = window.allRecords||[];
-            if(type==='group'){const g=document.getElementById('groupSelect').value; recs=g?recs.filter(r=>r.group_id===g):[]}
-            const stats={};
-            recs.forEach(r=>{if(!stats[r.user_id]) stats[r.user_id]={qq:r.user_id,name:r.user_name,count:0,groups:{}}; stats[r.user_id].count++; stats[r.user_id].groups[r.group_id]=getGroupName(r)});
-            const sorted=Object.entries(stats).sort((a,b)=>b[1].count-a[1].count).slice(0,10);
-            document.getElementById('ranking').innerHTML=sorted.length?sorted.map(([uid,u],i)=>`
-                <div class="ios-row">
-                    <div class="ranking-badge rank-${i<3?i+1:'other'}">${i+1}</div>
-                    <img class="ranking-avatar" src="https://q.qlogo.cn/headimg_dl?dst_uin=${u.qq}&spec=640" onerror="this.style.display='none'">
-                    <div class="ios-row-content">
-                        <div class="ios-row-title">${u.name}</div>
-                        <div class="ios-row-subtitle">${maskQQ(u.qq)} · ${Object.keys(u.groups).length}个群</div>
-                    </div>
-                    <div class="ranking-count">${u.count}<span>次</span></div>
-                </div>
-            `).join(''):'<div class="loading">暂无数据</div>';
-        }
-        function updateGroupSelect() {
-            const map={}; (window.allRecords||[]).forEach(r=>{if(!map[r.group_id])map[r.group_id]=getGroupName(r)});
-            const s=document.getElementById('groupSelect'); s.innerHTML='<option value="">选择群聊</option>';
-            Object.entries(map).forEach(([id,n])=>{s.innerHTML+=`<option value="${id}">${n}</option>`});
-        }
-        let adminToken=localStorage.getItem('adminToken')||'';
-        window.adminToken=adminToken;
-        function checkLogin() {
-            adminToken=localStorage.getItem('adminToken')||''; window.adminToken=adminToken;
-            document.getElementById('loginSection').style.display=adminToken?'none':'block';
-            document.getElementById('adminSection').style.display=adminToken?'block':'none';
-            document.getElementById('adminBtns').style.display=adminToken?'inline':'none';
-            loadRecords();
-        }
-        async function login() {
-            const pw=document.getElementById('loginPassword').value;
-            if(!pw) return showToast('请输入密码','error');
-            try{const{code,token,msg}=await(await fetch('/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pw})})).json();
-            if(!code){adminToken=token;localStorage.setItem('adminToken',token);checkLogin();showToast('登录成功','success');document.getElementById('loginPassword').value=''}
-            else showToast(msg,'error')}catch(e){showToast('失败','error')}
-        }
+        function switchPage(page,el){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.tabbar-item').forEach(t=>t.classList.remove('active'));document.getElementById('page-'+page).classList.add('active');el.classList.add('active')}
+        window.allRecords=[];window.currentRecordGroup='';
+        function getGroupName(r){if(r.group_name&&r.group_name.trim())return r.group_name.trim();return '群'+r.group_id}
+        function switchRecordTab(type){window.currentRecordGroup=type==='all'?'':document.getElementById('recordGroupSelect').value;filterRecords()}
+        function filterRecords(){const kw=document.getElementById('searchInput').value.toLowerCase();let records=window.allRecords||[];if(window.currentRecordGroup)records=records.filter(r=>r.group_id===window.currentRecordGroup);if(kw)records=records.filter(r=>(r.message||'').toLowerCase().includes(kw)||(r.user_name||'').toLowerCase().includes(kw)||(r.user_id||'').toString().includes(kw)||getGroupName(r).toLowerCase().includes(kw)||(r.reason||'').toLowerCase().includes(kw));renderRecords(records.slice(-50).reverse(),records.length)}
+        function renderRecords(records,total){const logged=!!window.adminToken;document.getElementById('records').innerHTML=records.length?records.map((r,i)=>`<div class="ios-row" id="record-${total-1-i}">${logged?`<input type="checkbox" class="record-checkbox" data-index="${total-1-i}" onchange="toggleSelect(${total-1-i})">`:''}<img class="record-avatar" src="https://q.qlogo.cn/headimg_dl?dst_uin=${r.user_id}&spec=640" onerror="this.style.display='none'"><div class="ios-row-content"><div class="ios-row-title">${r.user_name}</div><div class="ios-row-subtitle">${getGroupName(r)} · ${new Date(r.time).toLocaleString('zh-CN',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}</div><div style="font-size:15px;color:var(--ios-label);margin-top:6px;word-break:break-all;">${r.message}</div><div style="font-size:13px;color:var(--ios-orange);margin-top:4px;">${r.reason}</div></div>${logged?`<button class="delete-text-btn" onclick="deleteSingle(${total-1-i})">删除</button>`:''}</div>`).join(''):'<div class="loading">暂无记录</div>'}
+        function updateRecordGroupSelect(){const map={};(window.allRecords||[]).forEach(r=>{if(!map[r.group_id])map[r.group_id]=getGroupName(r)});const sel=document.getElementById('recordGroupSelect');sel.innerHTML='<option value="">选择群聊</option>';Object.entries(map).forEach(([id,name])=>{sel.innerHTML+=`<option value="${id}">${name}</option>`})}
+        async function loadRecords(){try{const{data}=await(await fetch('/records')).json();const nameMap={};(data||[]).forEach(r=>{if(r.group_name&&r.group_name.trim())nameMap[r.group_id]=r.group_name.trim()});(data||[]).forEach(r=>{if(!r.group_name&&nameMap[r.group_id])r.group_name=nameMap[r.group_id]});window.allRecords=data||[];window.selectedIndices=new Set();document.getElementById('total').textContent=data.length;document.getElementById('users').textContent=new Set(data.map(r=>r.user_id)).size;document.getElementById('groups').textContent=new Set(data.map(r=>r.group_id)).size;updateRecordGroupSelect();updateGroupSelect();filterRecords();updateDeleteBtn();updateRanking('global')}catch(e){document.getElementById('records').innerHTML='<div class="loading">加载失败</div>'}}
+        function toggleSelect(i){window.selectedIndices.has(i)?window.selectedIndices.delete(i):window.selectedIndices.add(i);updateDeleteBtn()}
+        function selectAll(){document.querySelectorAll('.record-checkbox').forEach(c=>{c.checked=true;window.selectedIndices.add(+c.dataset.index)});updateDeleteBtn()}
+        function selectNone(){document.querySelectorAll('.record-checkbox').forEach(c=>c.checked=false);window.selectedIndices.clear();updateDeleteBtn()}
+        function updateDeleteBtn(){const n=window.selectedIndices?.size||0;document.getElementById('selectedCount').textContent=n;document.getElementById('deleteSelectedBtn').style.display=n?'inline-block':'none'}
+        async function deleteSingle(i){if(!window.adminToken)return showToast('请先登录','error');if(!confirm('确定删除？'))return;await doDelete([i])}
+        async function deleteSelected(){if(!window.adminToken)return showToast('请先登录','error');if(!window.selectedIndices.size)return showToast('请选择','error');if(!confirm('删除'+window.selectedIndices.size+'条？'))return;await doDelete([...window.selectedIndices])}
+        async function doDelete(idx){try{const{code,msg}=await(await fetch('/delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:window.adminToken,indices:idx})})).json();if(!code){showToast(msg,'success');loadRecords()}else{showToast(msg,'error');if(msg.includes('登录'))logout()}}catch(e){showToast('失败','error')}}
+        function switchTab(t){if(t==='global'){document.getElementById('groupSelect').value=''}updateRanking(t)}
+        function maskQQ(q){const s=String(q);return s.length<=4?s:s.slice(0,3)+'***'+s.slice(-3)}
+        function updateRanking(type){let recs=window.allRecords||[];if(type==='group'){const g=document.getElementById('groupSelect').value;recs=g?recs.filter(r=>r.group_id===g):[]}const stats={};recs.forEach(r=>{if(!stats[r.user_id])stats[r.user_id]={qq:r.user_id,name:r.user_name,count:0,groups:{}};stats[r.user_id].count++;stats[r.user_id].groups[r.group_id]=getGroupName(r)});const sorted=Object.entries(stats).sort((a,b)=>b[1].count-a[1].count).slice(0,10);document.getElementById('ranking').innerHTML=sorted.length?sorted.map(([uid,u],i)=>`<div class="ios-row"><div class="ranking-badge rank-${i<3?i+1:'other'}">${i+1}</div><img class="ranking-avatar" src="https://q.qlogo.cn/headimg_dl?dst_uin=${u.qq}&spec=640" onerror="this.style.display='none'"><div class="ios-row-content"><div class="ios-row-title">${u.name}</div><div class="ios-row-subtitle">${maskQQ(u.qq)} · ${Object.keys(u.groups).length}个群</div></div><div class="ranking-count">${u.count}<span>次</span></div></div>`).join(''):'<div class="loading">暂无数据</div>'}
+        function updateGroupSelect(){const map={};(window.allRecords||[]).forEach(r=>{if(!map[r.group_id])map[r.group_id]=getGroupName(r)});const s=document.getElementById('groupSelect');s.innerHTML='<option value="">选择群聊</option>';Object.entries(map).forEach(([id,n])=>{s.innerHTML+=`<option value="${id}">${n}</option>`})}
+        let adminToken=localStorage.getItem('adminToken')||'';window.adminToken=adminToken;
+        function checkLogin(){adminToken=localStorage.getItem('adminToken')||'';window.adminToken=adminToken;document.getElementById('loginSection').style.display=adminToken?'none':'block';document.getElementById('adminSection').style.display=adminToken?'block':'none';document.getElementById('adminBtns').style.display=adminToken?'inline':'none';loadRecords()}
+        async function login(){const pw=document.getElementById('loginPassword').value;if(!pw)return showToast('请输入密码','error');try{const{code,token,msg}=await(await fetch('/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pw})})).json();if(!code){adminToken=token;localStorage.setItem('adminToken',token);checkLogin();showToast('登录成功','success');document.getElementById('loginPassword').value=''}else showToast(msg,'error')}catch(e){showToast('失败','error')}}
         function logout(){adminToken='';localStorage.removeItem('adminToken');checkLogin();showToast('已退出','success')}
         function showToast(msg,type){const t=document.createElement('div');t.className='toast toast-'+type;t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),2000)}
         async function clearRecords(){if(!confirm('清空全部？'))return;try{const{code,msg}=await(await fetch('/clear',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:adminToken})})).json();if(!code){showToast(msg,'success');loadRecords()}else{showToast(msg,'error');if(msg.includes('登录'))logout()}}catch(e){showToast('失败','error')}}
