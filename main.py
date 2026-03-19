@@ -29,6 +29,7 @@ class ProfanityMonitor(Star):
         self.enable_http = config.get("enable_http_api", False)
         self.host = config.get("http_host", "0.0.0.0")
         self.port = config.get("http_port", 10050)
+        self.admin_password = config.get("admin_password", "m1234")
 
     async def initialize(self):
         os.makedirs(self.data_dir, exist_ok=True)
@@ -61,6 +62,7 @@ class ProfanityMonitor(Star):
         app.router.add_get("/", self._handle_index)
         app.router.add_get("/records", self._handle_get_records)
         app.router.add_get("/stats", self._handle_get_stats)
+        app.router.add_post("/clear", self._handle_clear_records)
         self.http_runner = web.AppRunner(app)
         await self.http_runner.setup()
         try:
@@ -110,6 +112,14 @@ class ProfanityMonitor(Star):
         .record-reason { color: #e74c3c; font-size: 13px; }
         .record-time { color: #999; font-size: 12px; margin-top: 8px; }
         .loading { text-align: center; padding: 40px; color: #666; }
+        .danger-btn { background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); }
+        .danger-btn:hover { background: linear-gradient(135deg, #c0392b 0%, #a93226 100%); }
+        .password-input { padding: 10px; border: 1px solid #ddd; border-radius: 8px; margin-right: 10px; width: 150px; }
+        .btn-group { display: flex; gap: 10px; align-items: center; margin-top: 15px; flex-wrap: wrap; }
+        .toast { position: fixed; top: 20px; right: 20px; padding: 15px 25px; border-radius: 10px; color: white; font-weight: bold; z-index: 1000; animation: slideIn 0.3s ease; }
+        .toast-success { background: #27ae60; }
+        .toast-error { background: #e74c3c; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
     </style>
 </head>
 <body>
@@ -132,7 +142,11 @@ class ProfanityMonitor(Star):
         </div>
         <div class="card">
             <h2 style="margin-bottom: 15px; color: #333;">最近记录</h2>
-            <button class="btn" onclick="loadRecords()">刷新数据</button>
+            <div class="btn-group">
+                <button class="btn" onclick="loadRecords()">刷新数据</button>
+                <input type="password" id="clearPassword" class="password-input" placeholder="输入管理密码">
+                <button class="btn danger-btn" onclick="clearRecords()">清空所有记录</button>
+            </div>
             <div id="records"><div class="loading">点击按钮加载数据</div></div>
         </div>
     </div>
@@ -159,6 +173,39 @@ class ProfanityMonitor(Star):
                 document.getElementById('records').innerHTML = html || '<div class="loading">暂无记录</div>';
             } catch(e) {
                 document.getElementById('records').innerHTML = '<div class="loading">加载失败</div>';
+            }
+        }
+        function showToast(msg, type) {
+            const toast = document.createElement('div');
+            toast.className = 'toast toast-' + type;
+            toast.textContent = msg;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+        async function clearRecords() {
+            const password = document.getElementById('clearPassword').value;
+            if (!password) {
+                showToast('请输入管理密码', 'error');
+                return;
+            }
+            if (!confirm('确定要清空所有记录吗？此操作不可恢复！')) {
+                return;
+            }
+            try {
+                const res = await fetch('/clear', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password })
+                });
+                const data = await res.json();
+                if (data.code === 0) {
+                    showToast(data.msg, 'success');
+                    loadRecords();
+                } else {
+                    showToast(data.msg, 'error');
+                }
+            } catch(e) {
+                showToast('操作失败', 'error');
             }
         }
     </script>
@@ -210,6 +257,27 @@ class ProfanityMonitor(Star):
                 },
             }
         )
+
+    async def _handle_clear_records(self, request: web.Request) -> web.Response:
+        try:
+            data = await request.json()
+            password = data.get("password", "")
+            if password != self.admin_password:
+                return web.json_response({"code": 1, "msg": "密码错误"})
+            group_id = data.get("group_id")
+            if group_id:
+                self.records = [
+                    r for r in self.records if r.get("group_id") != group_id
+                ]
+                msg = f"群组 {group_id} 的记录已清空"
+            else:
+                self.records = []
+                msg = "所有记录已清空"
+            self._save_records()
+            logger.info(msg)
+            return web.json_response({"code": 0, "msg": msg})
+        except Exception as e:
+            return web.json_response({"code": 1, "msg": str(e)})
 
     @filter.event_message_type(EventMessageType.GROUP_MESSAGE)
     async def on_group_message(self, event: AstrMessageEvent):

@@ -32,5 +32,11 @@
     "description": "HTTP服务器端口",
     "type": "int",
     "default": 10050
+  },
+  "admin_password": {
+    "description": "管理密码",
+    "type": "string",
+    "default": "m1234",
+    "hint": "用于Web界面清空数据的验证密码"
   }
 }
