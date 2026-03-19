@@ -1,0 +1,57 @@
+provider_id:
+  description: 使用的LLM提供商
+  type: string
+  hint: 选择用于分析脏话的LLM模型
+  _special: select_provider
+
+custom_prompt:
+  description: 自定义分析Prompt
+  type: text
+  default: |
+    请判断以下消息是否包含脏话、辱骂、侮辱性词汇，包括但不限于：
+    1. 直接的脏话粗口 2. 谐音替代（如tm、卧槽、尼玛等）
+    3. 拼音首字母缩写（如nmsl、wc等）4. 黑话暗语
+    5. 网络流行梗中的侮辱性表达 6. 符号替代（如*、#等）
+
+    注意以下情况不算脏话：
+    - @某人的消息，如 '@用户名' 或 '@用户名(QQ号)'
+    - 用户昵称、群名片中的文字
+    - 正常的聊天内容
+
+    只回复一个JSON对象：{"is_profanity": true/false, "reason": "原因"}。
+    消息内容：{message}
+  hint: 使用 {message} 作为消息内容占位符
+
+enable_groups:
+  description: 启用监控的群聊ID列表
+  type: list
+  default: []
+  hint: 留空表示监控所有群聊，填写群聊ID则只监控指定群聊
+
+ignore_groups:
+  description: 忽略监控的群聊ID列表
+  type: list
+  default: []
+  hint: 填写的群聊ID将不会被监控
+
+enable_http_api:
+  description: 是否启用HTTP API
+  type: bool
+  default: false
+  hint: 启用后将启动HTTP服务器，提供数据查询API
+
+http_host:
+  description: HTTP服务器绑定地址
+  type: string
+  default: "0.0.0.0"
+
+http_port:
+  description: HTTP服务器端口
+  type: int
+  default: 10050
+
+admin_password:
+  description: 管理密码
+  type: string
+  default: "m1234"
+  hint: 用于Web界面清空数据的验证密码
