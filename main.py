@@ -77,16 +77,91 @@ class ProfanityMonitor(Star):
                 raise
 
     async def _handle_index(self, request: web.Request) -> web.Response:
-        return web.json_response(
-            {
-                "name": "astrbot_plugin_profanity_monitor",
-                "version": "1.0.0",
-                "apis": {
-                    "/api/records": "获取所有脏话记录",
-                    "/api/stats": "获取用户脏话统计",
-                },
+        html = """<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>群聊脏话监控</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .card { background: white; border-radius: 16px; padding: 24px; margin-bottom: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
+        h1 { color: white; text-align: center; margin-bottom: 30px; font-size: 28px; text-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+        .api-list { list-style: none; }
+        .api-list li { padding: 16px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        .api-list li:last-child { border-bottom: none; }
+        .api-path { font-family: monospace; background: #f0f0f0; padding: 6px 12px; border-radius: 6px; color: #333; }
+        .api-desc { color: #666; }
+        .btn { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 14px; transition: transform 0.2s; }
+        .btn:hover { transform: scale(1.05); }
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-top: 20px; }
+        .stat-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 12px; text-align: center; }
+        .stat-num { font-size: 32px; font-weight: bold; }
+        .stat-label { font-size: 14px; opacity: 0.9; }
+        #records { margin-top: 20px; }
+        .record-item { background: #f8f9fa; padding: 16px; border-radius: 10px; margin-bottom: 10px; border-left: 4px solid #667eea; }
+        .record-user { font-weight: bold; color: #333; }
+        .record-msg { color: #666; margin: 8px 0; word-break: break-all; }
+        .record-reason { color: #e74c3c; font-size: 13px; }
+        .record-time { color: #999; font-size: 12px; margin-top: 8px; }
+        .loading { text-align: center; padding: 40px; color: #666; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>群聊脏话监控</h1>
+        <div class="card">
+            <h2 style="margin-bottom: 15px; color: #333;">API 接口</h2>
+            <ul class="api-list">
+                <li><span class="api-path">GET /api/records</span><span class="api-desc">获取所有脏话记录</span></li>
+                <li><span class="api-path">GET /api/stats</span><span class="api-desc">获取用户脏话统计</span></li>
+            </ul>
+        </div>
+        <div class="card">
+            <h2 style="margin-bottom: 15px; color: #333;">统计概览</h2>
+            <div class="stats" id="stats">
+                <div class="stat-card"><div class="stat-num" id="total">-</div><div class="stat-label">总记录数</div></div>
+                <div class="stat-card"><div class="stat-num" id="users">-</div><div class="stat-label">涉及用户</div></div>
+                <div class="stat-card"><div class="stat-num" id="groups">-</div><div class="stat-label">涉及群组</div></div>
+            </div>
+        </div>
+        <div class="card">
+            <h2 style="margin-bottom: 15px; color: #333;">最近记录</h2>
+            <button class="btn" onclick="loadRecords()">刷新数据</button>
+            <div id="records"><div class="loading">点击按钮加载数据</div></div>
+        </div>
+    </div>
+    <script>
+        async function loadRecords() {
+            document.getElementById('records').innerHTML = '<div class="loading">加载中...</div>';
+            try {
+                const res = await fetch('/api/records');
+                const data = await res.json();
+                const records = data.data || [];
+                document.getElementById('total').textContent = records.length;
+                const users = new Set(records.map(r => r.user_id));
+                const groups = new Set(records.map(r => r.group_id));
+                document.getElementById('users').textContent = users.size;
+                document.getElementById('groups').textContent = groups.size;
+                const html = records.slice(-20).reverse().map(r => `
+                    <div class="record-item">
+                        <div class="record-user">${r.user_name}</div>
+                        <div class="record-msg">${r.message}</div>
+                        <div class="record-reason">${r.reason}</div>
+                        <div class="record-time">${new Date(r.time).toLocaleString('zh-CN')}</div>
+                    </div>
+                `).join('');
+                document.getElementById('records').innerHTML = html || '<div class="loading">暂无记录</div>';
+            } catch(e) {
+                document.getElementById('records').innerHTML = '<div class="loading">加载失败</div>';
             }
-        )
+        }
+    </script>
+</body>
+</html>"""
+        return web.Response(text=html, content_type="text/html")
 
     async def _handle_get_records(self, request: web.Request) -> web.Response:
         return web.json_response({"code": 0, "data": self.records})
