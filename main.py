@@ -152,13 +152,6 @@ class ProfanityMonitor(Star):
     <div class="container">
         <h1>群聊脏话监控</h1>
         <div class="card">
-            <h2 style="margin-bottom: 15px; color: #333;">API 接口</h2>
-            <ul class="api-list">
-                <li><span class="api-path">GET /records</span><span class="api-desc">获取所有脏话记录</span></li>
-                <li><span class="api-path">GET /stats</span><span class="api-desc">获取用户脏话统计</span></li>
-            </ul>
-        </div>
-        <div class="card">
             <h2 style="margin-bottom: 15px; color: #333;">统计概览</h2>
             <div class="stats" id="stats">
                 <div class="stat-card"><div class="stat-num" id="total">-</div><div class="stat-label">总记录数</div></div>
@@ -203,6 +196,13 @@ class ProfanityMonitor(Star):
                 </span>
             </div>
             <div id="records"><div class="loading">点击按钮加载数据</div></div>
+        </div>
+        <div class="card" style="text-align: center; padding: 15px;">
+            <span style="color: #999; font-size: 13px;">
+                API: <a href="/records" target="_blank" style="color: #5b9bd5;">/records</a> | 
+                <a href="/stats" target="_blank" style="color: #5b9bd5;">/stats</a> | 
+                <a href="https://github.com/huanxherta/syemamalielie" target="_blank" style="color: #5b9bd5;">文档</a>
+            </span>
         </div>
     </div>
     <script>
