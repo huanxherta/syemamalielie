@@ -23,6 +23,7 @@ class ProfanityMonitor(Star):
         self.records = []
         self.http_runner = None
         self.http_site = None
+        self.provider_id = config.get("provider_id", "")
         self.enable_http = config.get("enable_http_api", False)
         self.host = config.get("http_host", "0.0.0.0")
         self.port = config.get("http_port", 10050)
@@ -186,9 +187,14 @@ class ProfanityMonitor(Star):
                 '只回复一个JSON对象：{"is_profanity": true/false, "reason": "原因"}。\n'
                 f"消息内容：{message_str}"
             )
-            llm_result = await self.context.get_using_provider().text_chat(
-                prompt=prompt
-            )
+            if self.provider_id:
+                provider = self.context.get_provider_by_id(self.provider_id)
+            else:
+                provider = self.context.get_using_provider()
+            if not provider:
+                logger.error("未找到可用的LLM提供商")
+                return
+            llm_result = await provider.text_chat(prompt=prompt)
             response_text = llm_result.completion_text
             result = json.loads(response_text)
             if result.get("is_profanity"):

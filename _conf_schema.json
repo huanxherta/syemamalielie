@@ -1,4 +1,10 @@
 {
+  "provider_id": {
+    "description": "使用的LLM提供商",
+    "type": "string",
+    "hint": "选择用于分析脏话的LLM模型",
+    "_special": "select_provider"
+  },
   "enable_http_api": {
     "description": "是否启用HTTP API",
     "type": "bool",
