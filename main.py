@@ -685,15 +685,15 @@ class ProfanityMonitor(Star):
                 group_name = ""
                 # 尝试获取真实昵称和群名
                 try:
+                    # 尝试获取群名
+                    if hasattr(event, "get_group_name"):
+                        group_name = event.get_group_name() or ""
+                    # 尝试获取真实昵称
                     client = event.bot
                     if hasattr(client, "get_stranger_info"):
                         info = await client.get_stranger_info(user_id=int(user_id))
                         if info and "nickname" in info:
                             user_name = info["nickname"]
-                    if hasattr(client, "get_group_info"):
-                        group_info = await client.get_group_info(group_id=int(group_id))
-                        if group_info and "group_name" in group_info:
-                            group_name = group_info["group_name"]
                 except:
                     pass
                 record = {
