@@ -217,6 +217,12 @@ class ProfanityMonitor(Star):
                 <span class="search-icon">&#128269;</span>
                 <input type="text" class="search-input" id="searchInput" placeholder="搜索关键词、用户、群聊..." oninput="filterRecords()">
             </div>
+            <div class="tabs">
+                <div class="tab active" onclick="switchRecordTab('all')">全部</div>
+                <select id="recordGroupSelect" onchange="switchRecordTab('group')">
+                    <option value="">选择群聊</option>
+                </select>
+            </div>
             <div class="btn-group">
                 <button class="btn btn-outlined" onclick="loadRecords()">刷新</button>
                 <span id="adminBtns" style="display: none; gap: 8px; display: none;">
@@ -252,17 +258,33 @@ class ProfanityMonitor(Star):
     </div>
     <script>
         window.allRecords = [];
+        window.currentRecordGroup = '';
+        function getGroupName(r) {
+            return (r.group_name && r.group_name.trim()) || `群${r.group_id}`;
+        }
+        function switchRecordTab(type) {
+            if (type === 'all') {
+                window.currentRecordGroup = '';
+                document.getElementById('recordGroupSelect').value = '';
+            } else {
+                window.currentRecordGroup = document.getElementById('recordGroupSelect').value;
+            }
+            filterRecords();
+        }
         function filterRecords() {
             const keyword = document.getElementById('searchInput').value.toLowerCase();
             const records = window.allRecords || [];
             const isLoggedIn = !!window.adminToken;
             let filtered = records;
+            if (window.currentRecordGroup) {
+                filtered = filtered.filter(r => r.group_id === window.currentRecordGroup);
+            }
             if (keyword) {
-                filtered = records.filter(r => 
+                filtered = filtered.filter(r => 
                     (r.message && r.message.toLowerCase().includes(keyword)) ||
                     (r.user_name && r.user_name.toLowerCase().includes(keyword)) ||
                     (r.user_id && r.user_id.toString().includes(keyword)) ||
-                    (r.group_name && r.group_name.toLowerCase().includes(keyword)) ||
+                    (getGroupName(r).toLowerCase().includes(keyword)) ||
                     (r.group_id && r.group_id.toString().includes(keyword)) ||
                     (r.reason && r.reason.toLowerCase().includes(keyword))
                 );
@@ -280,7 +302,7 @@ class ProfanityMonitor(Star):
                             <img class="record-avatar" src="${getAvatarUrl(r.user_id)}" onerror="this.style.display='none'">
                             <div>
                                 <div class="record-user">${r.user_name}</div>
-                                <div style="font-size: 11px; color: var(--md-outline);">${r.group_name || '未知群聊'}</div>
+                                <div style="font-size: 11px; color: var(--md-outline);">${getGroupName(r)}</div>
                             </div>
                         </div>
                         <div class="record-msg">${r.message}</div>
@@ -292,12 +314,43 @@ class ProfanityMonitor(Star):
             `}).join('');
             document.getElementById('records').innerHTML = html || '<div class="loading">暂无记录</div>';
         }
+        function updateRecordGroupSelect() {
+            const records = window.allRecords || [];
+            const groupMap = {};
+            records.forEach(r => {
+                if (!groupMap[r.group_id]) {
+                    groupMap[r.group_id] = getGroupName(r);
+                }
+            });
+            const select = document.getElementById('recordGroupSelect');
+            const currentVal = select.value;
+            select.innerHTML = '<option value="">选择群聊</option>';
+            Object.entries(groupMap).forEach(([gid, gname]) => {
+                const option = document.createElement('option');
+                option.value = gid;
+                option.textContent = gname;
+                if (gid === currentVal) option.selected = true;
+                select.appendChild(option);
+            });
+        }
         async function loadRecords() {
             document.getElementById('records').innerHTML = '<div class="loading">加载中...</div>';
             try {
                 const res = await fetch('/records');
                 const data = await res.json();
                 const records = data.data || [];
+                // 更新群名：用新记录的群名覆盖旧记录
+                const groupNameMap = {};
+                records.forEach(r => {
+                    if (r.group_name && r.group_name.trim()) {
+                        groupNameMap[r.group_id] = r.group_name;
+                    }
+                });
+                records.forEach(r => {
+                    if ((!r.group_name || !r.group_name.trim()) && groupNameMap[r.group_id]) {
+                        r.group_name = groupNameMap[r.group_id];
+                    }
+                });
                 window.records = records;
                 window.allRecords = records;
                 window.selectedIndices = new Set();
@@ -306,6 +359,7 @@ class ProfanityMonitor(Star):
                 const groups = new Set(records.map(r => r.group_id));
                 document.getElementById('users').textContent = users.size;
                 document.getElementById('groups').textContent = groups.size;
+                updateRecordGroupSelect();
                 filterRecords();
                 updateDeleteBtn();
                 updateGroupSelect();
@@ -420,7 +474,7 @@ class ProfanityMonitor(Star):
             const userStats = {};
             filtered.forEach(r => {
                 const key = r.user_id;  // 使用QQ号作为唯一标识
-                const groupName = r.group_name && r.group_name.trim() ? r.group_name : '未知群聊';
+                const groupName = getGroupName(r);
                 if (!userStats[key]) {
                     userStats[key] = { qq: r.user_id, name: r.user_name, count: 0, groups: {} };
                 }
@@ -459,8 +513,7 @@ class ProfanityMonitor(Star):
             const groupMap = {};
             records.forEach(r => {
                 if (!groupMap[r.group_id]) {
-                    const groupName = r.group_name && r.group_name.trim() ? r.group_name : '未知群聊';
-                    groupMap[r.group_id] = groupName;
+                    groupMap[r.group_id] = getGroupName(r);
                 }
             });
             const select = document.getElementById('groupSelect');
