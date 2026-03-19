@@ -66,6 +66,7 @@ class ProfanityMonitor(Star):
         app.router.add_get("/stats", self._handle_get_stats)
         app.router.add_post("/login", self._handle_login)
         app.router.add_post("/clear", self._handle_clear_records)
+        app.router.add_post("/delete", self._handle_delete_records)
         self.http_runner = web.AppRunner(app)
         await self.http_runner.setup()
         try:
@@ -144,6 +145,7 @@ class ProfanityMonitor(Star):
         .tab { padding: 8px 16px; border-radius: 20px; cursor: pointer; background: rgba(135, 206, 250, 0.2); color: #5b9bd5; transition: all 0.3s; border: 1px solid rgba(135, 206, 250, 0.3); }
         .tab:hover { background: rgba(135, 206, 250, 0.4); }
         .tab.active { background: linear-gradient(135deg, #87ceeb 0%, #5b9bd5 100%); color: white; border: none; }
+        .record-checkbox { width: 18px; height: 18px; accent-color: #87ceeb; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -192,6 +194,9 @@ class ProfanityMonitor(Star):
             <h2 style="margin-bottom: 15px; color: #333;">最近记录</h2>
             <div class="btn-group">
                 <button class="btn" onclick="loadRecords()">刷新数据</button>
+                <button class="btn" onclick="selectAll()">全选</button>
+                <button class="btn" onclick="selectNone()">取消全选</button>
+                <button class="btn danger-btn" onclick="deleteSelected()" id="deleteSelectedBtn" style="display: none;">删除选中 (<span id="selectedCount">0</span>)</button>
             </div>
             <div id="records"><div class="loading">点击按钮加载数据</div></div>
         </div>
@@ -204,29 +209,111 @@ class ProfanityMonitor(Star):
                 const data = await res.json();
                 const records = data.data || [];
                 window.records = records;
+                window.selectedIndices = new Set();
                 document.getElementById('total').textContent = records.length;
                 const users = new Set(records.map(r => r.user_id));
                 const groups = new Set(records.map(r => r.group_id));
                 document.getElementById('users').textContent = users.size;
                 document.getElementById('groups').textContent = groups.size;
-                const html = records.slice(-20).reverse().map(r => `
-                    <div class="record-item">
-                        <div style="display: flex; align-items: center; margin-bottom: 8px;">
-                            <img src="${getAvatarUrl(r.user_id)}" style="width: 32px; height: 32px; border-radius: 50%; margin-right: 10px;" onerror="this.style.display='none'">
-                            <div>
-                                <div class="record-user">${r.user_name}</div>
-                                <div style="font-size: 12px; color: #999;">QQ: ${maskQQ(r.user_id)}</div>
+                const html = records.slice(-20).reverse().map((r, displayIdx) => {
+                    const realIdx = records.length - 1 - displayIdx;
+                    return `
+                    <div class="record-item" id="record-${realIdx}">
+                        <div style="display: flex; align-items: flex-start; gap: 10px;">
+                            <input type="checkbox" class="record-checkbox" data-index="${realIdx}" onchange="toggleSelect(${realIdx})" style="margin-top: 5px;">
+                            <div style="flex: 1;">
+                                <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                                    <img src="${getAvatarUrl(r.user_id)}" style="width: 32px; height: 32px; border-radius: 50%; margin-right: 10px;" onerror="this.style.display='none'">
+                                    <div>
+                                        <div class="record-user">${r.user_name}</div>
+                                        <div style="font-size: 12px; color: #999;">QQ: ${maskQQ(r.user_id)}</div>
+                                    </div>
+                                </div>
+                                <div class="record-msg">${r.message}</div>
+                                <div class="record-reason">${r.reason}</div>
+                                <div class="record-time">${new Date(r.time).toLocaleString('zh-CN')}</div>
                             </div>
+                            <button class="btn danger-btn" onclick="deleteSingle(${realIdx})" style="padding: 5px 10px; font-size: 12px;">删除</button>
                         </div>
-                        <div class="record-msg">${r.message}</div>
-                        <div class="record-reason">${r.reason}</div>
-                        <div class="record-time">${new Date(r.time).toLocaleString('zh-CN')}</div>
                     </div>
-                `).join('');
+                `}).join('');
                 document.getElementById('records').innerHTML = html || '<div class="loading">暂无记录</div>';
+                updateDeleteBtn();
                 updateRanking('global');
             } catch(e) {
                 document.getElementById('records').innerHTML = '<div class="loading">加载失败</div>';
+            }
+        }
+        function toggleSelect(idx) {
+            if (window.selectedIndices.has(idx)) {
+                window.selectedIndices.delete(idx);
+            } else {
+                window.selectedIndices.add(idx);
+            }
+            updateDeleteBtn();
+        }
+        function selectAll() {
+            document.querySelectorAll('.record-checkbox').forEach(cb => {
+                cb.checked = true;
+                window.selectedIndices.add(parseInt(cb.dataset.index));
+            });
+            updateDeleteBtn();
+        }
+        function selectNone() {
+            document.querySelectorAll('.record-checkbox').forEach(cb => {
+                cb.checked = false;
+            });
+            window.selectedIndices.clear();
+            updateDeleteBtn();
+        }
+        function updateDeleteBtn() {
+            const count = window.selectedIndices ? window.selectedIndices.size : 0;
+            document.getElementById('selectedCount').textContent = count;
+            document.getElementById('deleteSelectedBtn').style.display = count > 0 ? 'inline-block' : 'none';
+        }
+        async function deleteSingle(idx) {
+            if (!window.adminToken) {
+                showToast('请先登录', 'error');
+                return;
+            }
+            if (!confirm('确定要删除这条记录吗？')) {
+                return;
+            }
+            await doDelete([idx]);
+        }
+        async function deleteSelected() {
+            if (!window.adminToken) {
+                showToast('请先登录', 'error');
+                return;
+            }
+            if (window.selectedIndices.size === 0) {
+                showToast('请先选择要删除的记录', 'error');
+                return;
+            }
+            if (!confirm(`确定要删除选中的 ${window.selectedIndices.size} 条记录吗？`)) {
+                return;
+            }
+            await doDelete(Array.from(window.selectedIndices));
+        }
+        async function doDelete(indices) {
+            try {
+                const res = await fetch('/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token: window.adminToken, indices })
+                });
+                const data = await res.json();
+                if (data.code === 0) {
+                    showToast(data.msg, 'success');
+                    loadRecords();
+                } else {
+                    showToast(data.msg, 'error');
+                    if (data.msg.includes('登录')) {
+                        logout();
+                    }
+                }
+            } catch(e) {
+                showToast('操作失败', 'error');
             }
         }
         let currentTab = 'global';
@@ -486,6 +573,41 @@ class ProfanityMonitor(Star):
             self._save_records()
             logger.info(msg)
             return web.json_response({"code": 0, "msg": msg})
+        except Exception as e:
+            return web.json_response({"code": 1, "msg": str(e)})
+
+    async def _handle_delete_records(self, request: web.Request) -> web.Response:
+        try:
+            data = await request.json()
+            token = data.get("token", "")
+            # 验证token
+            import time
+
+            if token not in self.login_tokens:
+                return web.json_response({"code": 1, "msg": "请先登录"})
+            token_data = self.login_tokens[token]
+            # token有效期30分钟
+            if time.time() - token_data["time"] > 1800:
+                del self.login_tokens[token]
+                return web.json_response({"code": 1, "msg": "登录已过期，请重新登录"})
+            # 刷新token时间
+            self.login_tokens[token]["time"] = time.time()
+            # 获取要删除的记录索引列表
+            indices = data.get("indices", [])
+            if not indices:
+                return web.json_response({"code": 1, "msg": "请选择要删除的记录"})
+            # 按索引从大到小排序删除
+            indices.sort(reverse=True)
+            deleted_count = 0
+            for idx in indices:
+                if 0 <= idx < len(self.records):
+                    self.records.pop(idx)
+                    deleted_count += 1
+            self._save_records()
+            logger.info(f"删除了 {deleted_count} 条记录")
+            return web.json_response(
+                {"code": 0, "msg": f"成功删除 {deleted_count} 条记录"}
+            )
         except Exception as e:
             return web.json_response({"code": 1, "msg": str(e)})
 
