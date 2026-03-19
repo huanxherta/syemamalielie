@@ -5,7 +5,7 @@ from aiohttp import web
 from astrbot.api.event import filter, AstrMessageEvent, MessageEventResult
 from astrbot.api.event.filter import EventMessageType
 from astrbot.api.star import Context, Star, register
-from astrbot.api import logger
+from astrbot.api import logger, AstrBotConfig
 
 
 @register(
@@ -15,20 +15,25 @@ from astrbot.api import logger
     "1.0.0",
 )
 class ProfanityMonitor(Star):
-    def __init__(self, context: Context):
+    def __init__(self, context: Context, config: AstrBotConfig):
         super().__init__(context)
+        self.config = config
         self.data_dir = os.path.join("data", "profanity_monitor")
         self.data_file = os.path.join(self.data_dir, "records.json")
         self.records = []
         self.http_runner = None
         self.http_site = None
-        self.host = "0.0.0.0"
-        self.port = 10050
+        self.enable_http = config.get("enable_http_api", False)
+        self.host = config.get("http_host", "0.0.0.0")
+        self.port = config.get("http_port", 10050)
 
     async def initialize(self):
         os.makedirs(self.data_dir, exist_ok=True)
         self._load_records()
-        await self._start_http_server()
+        if self.enable_http:
+            await self._start_http_server()
+        else:
+            logger.info("HTTP API 未启用，可在插件配置中开启")
 
     def _load_records(self):
         if os.path.exists(self.data_file):

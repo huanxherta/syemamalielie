@@ -1,0 +1,18 @@
+{
+  "enable_http_api": {
+    "description": "是否启用HTTP API",
+    "type": "bool",
+    "default": false,
+    "hint": "启用后将启动HTTP服务器，提供数据查询API"
+  },
+  "http_host": {
+    "description": "HTTP服务器绑定地址",
+    "type": "string",
+    "default": "0.0.0.0"
+  },
+  "http_port": {
+    "description": "HTTP服务器端口",
+    "type": "int",
+    "default": 10050
+  }
+}
