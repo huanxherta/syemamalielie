@@ -55,6 +55,7 @@ class ProfanityMonitor(Star):
 
     async def _start_http_server(self):
         app = web.Application()
+        app.router.add_get("/", self._handle_index)
         app.router.add_get("/api/records", self._handle_get_records)
         app.router.add_get("/api/stats", self._handle_get_stats)
         self.http_runner = web.AppRunner(app)
@@ -74,6 +75,18 @@ class ProfanityMonitor(Star):
                 logger.info(f"HTTP API 已启动: http://{self.host}:{self.port}")
             else:
                 raise
+
+    async def _handle_index(self, request: web.Request) -> web.Response:
+        return web.json_response(
+            {
+                "name": "astrbot_plugin_profanity_monitor",
+                "version": "1.0.0",
+                "apis": {
+                    "/api/records": "获取所有脏话记录",
+                    "/api/stats": "获取用户脏话统计",
+                },
+            }
+        )
 
     async def _handle_get_records(self, request: web.Request) -> web.Response:
         return web.json_response({"code": 0, "data": self.records})
