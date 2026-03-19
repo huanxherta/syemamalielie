@@ -15,16 +15,16 @@ from astrbot.api import logger, AstrBotConfig
     "1.0.0",
 )
 class ProfanityMonitor(Star):
-    def __init__(self, context: Context, config: AstrBotConfig):
+    def __init__(self, context: Context, config: AstrBotConfig = None):
         super().__init__(context)
-        self.config = config
+        self.config = config or {}
         self.data_dir = os.path.join("data", "profanity_monitor")
         self.data_file = os.path.join(self.data_dir, "records.json")
         self.records = []
         self.http_runner = None
         self.http_site = None
-        self.provider_id = config.get("provider_id", "")
-        self.custom_prompt = config.get("custom_prompt", "") or (
+        self.provider_id = self.config.get("provider_id", "")
+        self.custom_prompt = self.config.get("custom_prompt", "") or (
             "请判断以下消息是否包含脏话、辱骂、侮辱性词汇，包括但不限于：\n"
             "1. 直接的脏话粗口 2. 谐音替代（如tm、卧槽、尼玛等）\n"
             "3. 拼音首字母缩写（如nmsl、wc等）4. 黑话暗语\n"
@@ -36,12 +36,12 @@ class ProfanityMonitor(Star):
             '只回复一个JSON对象：{"is_profanity": true/false, "reason": "原因"}。\n'
             "消息内容：{message}"
         )
-        self.enable_groups = config.get("enable_groups", [])
-        self.ignore_groups = config.get("ignore_groups", [])
-        self.enable_http = config.get("enable_http_api", False)
-        self.host = config.get("http_host", "0.0.0.0")
-        self.port = config.get("http_port", 10050)
-        self.admin_password = config.get("admin_password", "m1234")
+        self.enable_groups = self.config.get("enable_groups", [])
+        self.ignore_groups = self.config.get("ignore_groups", [])
+        self.enable_http = self.config.get("enable_http_api", False)
+        self.host = self.config.get("http_host", "0.0.0.0")
+        self.port = self.config.get("http_port", 10050)
+        self.admin_password = self.config.get("admin_password", "m1234")
         self.login_attempts = {}
         self.login_tokens = {}
 
