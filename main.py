@@ -114,16 +114,20 @@ class ProfanityMonitor(Star):
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{--bg:#F2F2F7;--card:rgba(255,255,255,.82);--blue:#007AFF;--red:#FF3B30;--green:#34C759;--orange:#FF9500;--gray:#8E8E93;--gray2:#AEAEB2;--gray5:#E5E5EA;--gray6:#F2F2F7;--label:#000;--label2:#3C3C43;--sep:rgba(60,60,67,.12)}
 @media(prefers-color-scheme:dark){:root{--bg:#000;--card:rgba(44,44,46,.82);--blue:#0A84FF;--red:#FF453A;--green:#30D158;--orange:#FF9F0A;--gray5:#38383A;--gray6:#1C1C1E;--label:#fff;--label2:#EBEBF5;--sep:rgba(84,84,88,.65)}}
-body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','PingFang SC',sans-serif;background:var(--bg);min-height:100vh;padding:0 0 80px;-webkit-font-smoothing:antialiased}
-.c{max-width:428px;margin:0 auto;padding:20px 16px}
+body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','PingFang SC',sans-serif;background:var(--bg);min-height:100vh;-webkit-font-smoothing:antialiased}
+.c{max-width:960px;margin:0 auto;padding:20px 24px 100px}
+@media(max-width:600px){.c{padding:16px 16px 80px}}
+.layout{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:768px){.layout{grid-template-columns:1fr}}
 .hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
 .hdr h1{font-size:34px;font-weight:700;color:var(--label)}
+@media(max-width:600px){.hdr h1{font-size:28px}}
 .sec{background:var(--card);backdrop-filter:blur(40px);border-radius:13px;overflow:hidden;margin-bottom:16px}
 .sec-h{padding:12px 16px 8px;font-size:13px;color:var(--gray);text-transform:uppercase}
 .row{display:flex;align-items:center;padding:12px 16px;position:relative}
 .row:not(:last-child)::after{content:'';position:absolute;bottom:0;left:54px;right:16px;height:.5px;background:var(--sep)}
-.row-c{flex:1}
-.row-t{font-size:17px;color:var(--label)}
+.row-c{flex:1;min-width:0}
+.row-t{font-size:17px;color:var(--label);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .row-s{font-size:14px;color:var(--gray);margin-top:2px}
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--sep)}
 .stat{background:var(--card);padding:16px 8px;text-align:center}
@@ -144,7 +148,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','PingFang SC',sa
 .tab.on{background:var(--blue);color:#fff}
 .sel{padding:6px 12px;border-radius:16px;font-size:13px;background:var(--gray5);color:var(--label2);border:none;cursor:pointer;outline:none}
 .av{width:44px;height:44px;border-radius:50%;margin-right:12px;object-fit:cover}
-.badge{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;margin-right:12px}
+.badge{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;margin-right:12px;flex-shrink:0}
 .r1{background:linear-gradient(135deg,#FFD700,#FFA500);color:#fff}
 .r2{background:linear-gradient(135deg,#C0C0C0,#A0A0A0);color:#fff}
 .r3{background:linear-gradient(135deg,#CD7F32,#8B4513);color:#fff}
@@ -163,38 +167,47 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','PingFang SC',sa
 .pw{display:flex;gap:8px;padding:0 16px 12px}
 .pw input{flex:1}
 .tabbar{position:fixed;bottom:0;left:0;right:0;background:var(--card);backdrop-filter:blur(20px);border-top:.5px solid var(--sep);display:flex;justify-content:space-around;padding:8px 0 env(safe-area-inset-bottom)}
+@media(min-width:769px){.tabbar{display:none}}
 .tabbar-i{display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;cursor:pointer;padding:4px 16px;color:var(--gray)}
 .tabbar-i.on{color:var(--blue)}
 .tabbar-ic{font-size:22px}
 .tabbar-l{font-size:10px;font-weight:500}
 .page{display:none}.page.on{display:block}
+.nav{display:none}
+@media(min-width:769px){.nav{display:flex;gap:12px;margin-bottom:20px}.nav-btn{padding:10px 20px;border-radius:10px;font-size:15px;font-weight:500;background:var(--gray5);color:var(--label2);border:none;cursor:pointer}.nav-btn.on{background:var(--blue);color:#fff}}
 </style>
 </head>
 <body>
 <div class="c">
-<div id="p-home" class="page on">
 <div class="hdr"><h1>监控</h1></div>
+<div class="nav">
+<button class="nav-btn on" onclick="switchPage('home',this)">概览</button>
+<button class="nav-btn" onclick="switchPage('record',this)">记录</button>
+<button class="nav-btn" onclick="switchPage('setting',this)">设置</button>
+</div>
+<div class="layout">
+<div id="p-home" class="page on">
 <div class="sec"><div class="stats"><div class="stat"><div class="stat-n" id="total">-</div><div class="stat-l">总记录</div></div><div class="stat"><div class="stat-n" id="users">-</div><div class="stat-l">用户</div></div><div class="stat"><div class="stat-n" id="groups">-</div><div class="stat-l">群组</div></div></div></div>
 <div class="sec"><div class="sec-h">排行榜</div><div class="tabs"><button class="tab on" onclick="switchTab('global',this)">总榜</button><select class="sel" id="groupSelect" onchange="switchTab('group')"><option value="">选择群聊</option></select></div><div id="ranking"><div class="ld">加载中...</div></div></div>
 </div>
 <div id="p-record" class="page">
-<div class="hdr"><h1>记录</h1></div>
 <div class="sec"><div class="search"><span class="search-i">&#128269;</span><input class="input" id="searchInput" placeholder="搜索..." oninput="filterRecords()"></div><div class="tabs"><button class="tab on" onclick="switchRT('all',this)">全部</button><select class="sel" id="recordGroupSelect" onchange="switchRT('group')"><option value="">选择群聊</option></select></div><div class="btns"><button class="btn btn-g" onclick="loadRecords()">刷新</button><span id="adminBtns" style="display:none"><button class="btn btn-g" onclick="selectAll()">全选</button><button class="btn btn-g" onclick="selectNone()">取消</button><button class="btn btn-r" onclick="deleteSelected()" id="deleteSelectedBtn" style="display:none">删除(<span id="selectedCount">0</span>)</button></span></div><div id="records"><div class="ld">点击刷新</div></div></div>
 </div>
 <div id="p-setting" class="page">
-<div class="hdr"><h1>设置</h1></div>
 <div class="sec"><div class="sec-h">管理</div><div id="loginSection"><div class="pw"><input type="password" class="input" id="loginPassword" placeholder="管理密码"><button class="btn btn-p" onclick="login()">登录</button></div></div><div id="adminSection" style="display:none"><div class="btns"><button class="btn btn-r" onclick="clearRecords()">清空全部</button><button class="btn btn-g" onclick="logout()">退出</button></div></div></div>
 <div class="sec"><div class="sec-h">API</div><div class="row" onclick="location.href='/records'"><div class="row-c"><div class="row-t">/records</div><div class="row-s">获取记录</div></div></div><div class="row" onclick="location.href='/stats'"><div class="row-c"><div class="row-t">/stats</div><div class="row-s">获取统计</div></div></div></div>
 </div>
 </div>
+</div>
 <div class="tabbar"><button class="tabbar-i on" onclick="switchPage('home',this)"><span class="tabbar-ic">&#128200;</span><span class="tabbar-l">概览</span></button><button class="tabbar-i" onclick="switchPage('record',this)"><span class="tabbar-ic">&#128196;</span><span class="tabbar-l">记录</span></button><button class="tabbar-i" onclick="switchPage('setting',this)"><span class="tabbar-ic">&#9881;</span><span class="tabbar-l">设置</span></button></div>
 <script>
-function switchPage(p,el){document.querySelectorAll('.page').forEach(x=>x.classList.remove('on'));document.querySelectorAll('.tabbar-i').forEach(x=>x.classList.remove('on'));document.getElementById('p-'+p).classList.add('on');el.classList.add('on')}
+function switchPage(p,el){document.querySelectorAll('.page').forEach(x=>x.classList.remove('on'));document.querySelectorAll('.tabbar-i,.nav-btn').forEach(x=>x.classList.remove('on'));document.getElementById('p-'+p).classList.add('on');if(el)el.classList.add('on')}
 window.allRecords=[];window.crg='';
+function maskGroupId(id){const s=String(id);return s.length<=4?s:s.slice(0,2)+'***'+s.slice(-2)}
 function switchRT(t,el){window.crg=t==='all'?'':document.getElementById('recordGroupSelect').value;if(el){document.querySelectorAll('#p-record .tab').forEach(x=>x.classList.remove('on'));el.classList.add('on')}filterRecords()}
-function filterRecords(){const kw=document.getElementById('searchInput').value.toLowerCase();let rs=window.allRecords||[];if(window.crg)rs=rs.filter(r=>r.group_id===window.crg);if(kw)rs=rs.filter(r=>(r.message||'').toLowerCase().includes(kw)||(r.user_name||'').toLowerCase().includes(kw)||r.group_id.toString().includes(kw)||(r.reason||'').toLowerCase().includes(kw));renderRecords(rs.slice(-50).reverse(),rs.length)}
-function renderRecords(rs,total){const lg=!!window.adminToken;document.getElementById('records').innerHTML=rs.length?rs.map((r,i)=>`<div class="row" id="record-${total-1-i}">${lg?`<input type="checkbox" class="cb" data-index="${total-1-i}" onchange="toggleSelect(${total-1-i})">`:''}<img class="r-av" src="https://q.qlogo.cn/headimg_dl?dst_uin=${r.user_id}&spec=640" onerror="this.style.display='none'"><div class="row-c"><div class="row-t">${r.user_name}</div><div class="row-s">群${r.group_id} · ${new Date(r.time).toLocaleString('zh-CN',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}</div><div style="font-size:15px;color:var(--label);margin-top:6px;word-break:break-all">${r.message}</div><div style="font-size:13px;color:var(--orange);margin-top:4px">${r.reason}</div></div>${lg?`<button class="del" onclick="deleteSingle(${total-1-i})">删除</button>`:''}</div>`).join(''):'<div class="ld">暂无记录</div>'}
-function updateRGS(){const m={};(window.allRecords||[]).forEach(r=>{m[r.group_id]=1});const s=document.getElementById('recordGroupSelect');s.innerHTML='<option value="">选择群聊</option>';Object.keys(m).forEach(id=>{s.innerHTML+=`<option value="${id}">群${id}</option>`})}
+function filterRecords(){const kw=document.getElementById('searchInput').value.toLowerCase();let rs=window.allRecords||[];if(window.crg)rs=rs.filter(r=>r.group_id===window.crg);if(kw)rs=rs.filter(r=>(r.message||'').toLowerCase().includes(kw)||(r.user_name||'').toLowerCase().includes(kw)||r.group_id.toString().includes(kw)||(r.reason||'').toLowerCase().includes(kw));renderRecords(rs.slice(-100).reverse(),rs.length)}
+function renderRecords(rs,total){const lg=!!window.adminToken;document.getElementById('records').innerHTML=rs.length?rs.map((r,i)=>`<div class="row" id="record-${total-1-i}">${lg?`<input type="checkbox" class="cb" data-index="${total-1-i}" onchange="toggleSelect(${total-1-i})">`:''}<img class="r-av" src="https://q.qlogo.cn/headimg_dl?dst_uin=${r.user_id}&spec=640" onerror="this.style.display='none'"><div class="row-c"><div class="row-t">${r.user_name}</div><div class="row-s">群${maskGroupId(r.group_id)} · ${new Date(r.time).toLocaleString('zh-CN',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}</div><div style="font-size:15px;color:var(--label);margin-top:6px;word-break:break-all">${r.message}</div><div style="font-size:13px;color:var(--orange);margin-top:4px">${r.reason}</div></div>${lg?`<button class="del" onclick="deleteSingle(${total-1-i})">删除</button>`:''}</div>`).join(''):'<div class="ld">暂无记录</div>'}
+function updateRGS(){const m={};(window.allRecords||[]).forEach(r=>{m[r.group_id]=1});const s=document.getElementById('recordGroupSelect');s.innerHTML='<option value="">选择群聊</option>';Object.keys(m).forEach(id=>{s.innerHTML+=`<option value="${id}">群${maskGroupId(id)}</option>`})}
 async function loadRecords(){try{const{data}=await(await fetch('/records')).json();window.allRecords=data||[];window.selectedIndices=new Set();document.getElementById('total').textContent=data.length;document.getElementById('users').textContent=new Set(data.map(r=>r.user_id)).size;document.getElementById('groups').textContent=new Set(data.map(r=>r.group_id)).size;updateRGS();updateGS();filterRecords();updateDB();updateRanking('global')}catch(e){document.getElementById('records').innerHTML='<div class="ld">加载失败</div>'}}
 function toggleSelect(i){window.selectedIndices.has(i)?window.selectedIndices.delete(i):window.selectedIndices.add(i);updateDB()}
 function selectAll(){document.querySelectorAll('.cb').forEach(c=>{c.checked=true;window.selectedIndices.add(+c.dataset.index)});updateDB()}
@@ -206,7 +219,7 @@ async function doDelete(idx){try{const{code,msg}=await(await fetch('/delete',{me
 function switchTab(t,el){if(t==='global')document.getElementById('groupSelect').value='';if(el){document.querySelectorAll('#p-home .tab').forEach(x=>x.classList.remove('on'));el.classList.add('on')}updateRanking(t)}
 function maskQQ(q){const s=String(q);return s.length<=4?s:s.slice(0,3)+'***'+s.slice(-3)}
 function updateRanking(type){let rs=window.allRecords||[];if(type==='group'){const g=document.getElementById('groupSelect').value;rs=g?rs.filter(r=>r.group_id===g):[]}const st={};rs.forEach(r=>{if(!st[r.user_id])st[r.user_id]={qq:r.user_id,name:r.user_name,count:0,groups:{}};st[r.user_id].count++;st[r.user_id].groups[r.group_id]=1});const sorted=Object.entries(st).sort((a,b)=>b[1].count-a[1].count).slice(0,10);document.getElementById('ranking').innerHTML=sorted.length?sorted.map(([uid,u],i)=>`<div class="row"><div class="badge r${i<3?i+1:'o'}">${i+1}</div><img class="av" src="https://q.qlogo.cn/headimg_dl?dst_uin=${u.qq}&spec=640" onerror="this.style.display='none'"><div class="row-c"><div class="row-t">${u.name}</div><div class="row-s">${maskQQ(u.qq)} · ${Object.keys(u.groups).length}个群</div></div><div class="cnt">${u.count}<span>次</span></div></div>`).join(''):'<div class="ld">暂无数据</div>'}
-function updateGS(){const m={};(window.allRecords||[]).forEach(r=>{m[r.group_id]=1});const s=document.getElementById('groupSelect');s.innerHTML='<option value="">选择群聊</option>';Object.keys(m).forEach(id=>{s.innerHTML+=`<option value="${id}">群${id}</option>`})}
+function updateGS(){const m={};(window.allRecords||[]).forEach(r=>{m[r.group_id]=1});const s=document.getElementById('groupSelect');s.innerHTML='<option value="">选择群聊</option>';Object.keys(m).forEach(id=>{s.innerHTML+=`<option value="${id}">群${maskGroupId(id)}</option>`})}
 let adminToken=localStorage.getItem('adminToken')||'';window.adminToken=adminToken;
 function checkLogin(){adminToken=localStorage.getItem('adminToken')||'';window.adminToken=adminToken;document.getElementById('loginSection').style.display=adminToken?'none':'block';document.getElementById('adminSection').style.display=adminToken?'block':'none';document.getElementById('adminBtns').style.display=adminToken?'inline':'none';loadRecords()}
 async function login(){const pw=document.getElementById('loginPassword').value;if(!pw)return showToast('请输入密码','error');try{const{code,token,msg}=await(await fetch('/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pw})})).json();if(!code){adminToken=token;localStorage.setItem('adminToken',token);checkLogin();showToast('登录成功','success');document.getElementById('loginPassword').value=''}else showToast(msg,'error')}catch(e){showToast('失败','error')}}
