@@ -94,118 +94,192 @@ class ProfanityMonitor(Star):
     <title>群聊脏话监控</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft YaHei", sans-serif; background: url('https://imgbed.iqach.top/file/1773915308321_92650004_p0.jpg') no-repeat center center fixed; background-size: cover; min-height: 100vh; padding: 20px; }
-        body::before { content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(135, 206, 250, 0.3); z-index: -1; }
-        .container { max-width: 800px; margin: 0 auto; }
-        .card { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(10px); border-radius: 20px; padding: 24px; margin-bottom: 20px; box-shadow: 0 8px 32px rgba(100, 149, 237, 0.2); border: 2px solid rgba(135, 206, 250, 0.5); }
-        h1 { color: #5b9bd5; text-align: center; margin-bottom: 30px; font-size: 32px; text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.8); font-weight: bold; }
-        h2 { color: #5b9bd5 !important; }
-        .api-list { list-style: none; }
-        .api-list li { padding: 16px; border-bottom: 1px solid rgba(135, 206, 250, 0.3); display: flex; justify-content: space-between; align-items: center; }
-        .api-list li:last-child { border-bottom: none; }
-        .api-path { font-family: monospace; background: rgba(135, 206, 250, 0.2); padding: 6px 12px; border-radius: 20px; color: #5b9bd5; border: 1px solid rgba(135, 206, 250, 0.5); }
-        .api-desc { color: #6a9fd8; }
-        .btn { background: linear-gradient(135deg, #87ceeb 0%, #5b9bd5 100%); color: white; border: none; padding: 10px 20px; border-radius: 20px; cursor: pointer; font-size: 14px; transition: all 0.3s; box-shadow: 0 4px 15px rgba(91, 155, 213, 0.3); }
-        .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(91, 155, 213, 0.4); }
-        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-top: 20px; }
-        .stat-card { background: linear-gradient(135deg, #87ceeb 0%, #add8e6 100%); color: white; padding: 20px; border-radius: 16px; text-align: center; box-shadow: 0 4px 15px rgba(135, 206, 235, 0.3); }
-        .stat-num { font-size: 32px; font-weight: bold; text-shadow: 1px 1px 2px rgba(0,0,0,0.1); }
-        .stat-label { font-size: 14px; opacity: 0.9; }
-        #records { margin-top: 20px; }
-        .record-item { background: rgba(255, 255, 255, 0.7); padding: 16px; border-radius: 12px; margin-bottom: 10px; border-left: 4px solid #87ceeb; }
-        .record-user { font-weight: bold; color: #5b9bd5; }
-        .record-msg { color: #666; margin: 8px 0; word-break: break-all; }
-        .record-reason { color: #ff7f7f; font-size: 13px; }
-        .record-time { color: #99ccff; font-size: 12px; margin-top: 8px; }
-        .loading { text-align: center; padding: 40px; color: #5b9bd5; }
-        .danger-btn { background: linear-gradient(135deg, #ffb6c1 0%, #ff69b4 100%); }
-        .danger-btn:hover { background: linear-gradient(135deg, #ff69b4 0%, #ff1493 100%); }
-        .password-input { padding: 10px; border: 2px solid rgba(135, 206, 250, 0.5); border-radius: 20px; margin-right: 10px; width: 150px; background: rgba(255, 255, 255, 0.8); }
-        .password-input:focus { outline: none; border-color: #87ceeb; box-shadow: 0 0 10px rgba(135, 206, 250, 0.3); }
-        .btn-group { display: flex; gap: 10px; align-items: center; margin-top: 15px; flex-wrap: wrap; }
-        .toast { position: fixed; top: 20px; right: 20px; padding: 15px 25px; border-radius: 20px; color: white; font-weight: bold; z-index: 1000; animation: slideIn 0.3s ease; }
-        .toast-success { background: linear-gradient(135deg, #98fb98 0%, #90ee90 100%); color: #2e8b57; }
-        .toast-error { background: linear-gradient(135deg, #ffb6c1 0%, #ff69b4 100%); color: white; }
-        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-        .ranking-item { display: flex; align-items: center; padding: 12px; border-bottom: 1px solid rgba(135, 206, 250, 0.2); }
-        .ranking-item:last-child { border-bottom: none; }
-        .ranking-num { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px; }
-        .ranking-1 { background: linear-gradient(135deg, #ffd700 0%, #ffec8b 100%); color: #b8860b; }
-        .ranking-2 { background: linear-gradient(135deg, #c0c0c0 0%, #e8e8e8 100%); color: #696969; }
-        .ranking-3 { background: linear-gradient(135deg, #deb887 0%, #f5deb3 100%); color: #8b4513; }
-        .ranking-other { background: rgba(135, 206, 250, 0.2); color: #5b9bd5; }
-        .ranking-info { flex: 1; }
-        .ranking-name { font-weight: bold; color: #5b9bd5; }
-        .ranking-qq { font-size: 12px; color: #87ceeb; margin-top: 2px; }
-        .ranking-group { font-size: 12px; color: #99ccff; margin-top: 2px; }
-        .ranking-count { font-size: 20px; font-weight: bold; color: #ff69b4; }
-        .ranking-count span { font-size: 12px; color: #87ceeb; }
-        .ranking-avatar { width: 40px; height: 40px; border-radius: 50%; margin-right: 12px; object-fit: cover; border: 2px solid rgba(135, 206, 250, 0.5); }
-        .tabs { display: flex; gap: 10px; margin-bottom: 15px; }
-        .tab { padding: 8px 16px; border-radius: 20px; cursor: pointer; background: rgba(135, 206, 250, 0.2); color: #5b9bd5; transition: all 0.3s; border: 1px solid rgba(135, 206, 250, 0.3); }
-        .tab:hover { background: rgba(135, 206, 250, 0.4); }
-        .tab.active { background: linear-gradient(135deg, #87ceeb 0%, #5b9bd5 100%); color: white; border: none; }
-        .record-checkbox { width: 18px; height: 18px; accent-color: #87ceeb; cursor: pointer; }
+        :root {
+            --md-primary: #6750A4;
+            --md-on-primary: #FFFFFF;
+            --md-primary-container: #EADDFF;
+            --md-on-primary-container: #21005D;
+            --md-secondary: #625B71;
+            --md-on-secondary: #FFFFFF;
+            --md-secondary-container: #E8DEF8;
+            --md-on-secondary-container: #1D192B;
+            --md-tertiary: #7D5260;
+            --md-on-tertiary: #FFFFFF;
+            --md-tertiary-container: #FFD8E4;
+            --md-surface: #FEF7FF;
+            --md-surface-variant: #E7E0EC;
+            --md-on-surface: #1C1B1F;
+            --md-on-surface-variant: #49454F;
+            --md-outline: #79747E;
+            --md-outline-variant: #CAC4D0;
+            --md-error: #B3261E;
+            --md-shadow: 0 1px 3px 1px rgba(0,0,0,0.15), 0 1px 2px rgba(0,0,0,0.3);
+            --md-shadow-lg: 0 4px 8px 3px rgba(0,0,0,0.15), 0 1px 3px rgba(0,0,0,0.3);
+        }
+        body { font-family: 'Google Sans', 'Roboto', 'Noto Sans SC', sans-serif; background: var(--md-surface); min-height: 100vh; padding: 16px; }
+        .container { max-width: 840px; margin: 0 auto; }
+        .card { background: var(--md-surface); border-radius: 28px; padding: 24px; margin-bottom: 16px; box-shadow: var(--md-shadow); }
+        h1 { color: var(--md-primary); text-align: center; margin-bottom: 24px; font-size: 28px; font-weight: 400; letter-spacing: 0.5px; }
+        h2 { color: var(--md-on-surface) !important; font-size: 16px !important; font-weight: 500 !important; letter-spacing: 0.15px; }
+        .btn { background: var(--md-primary); color: var(--md-on-primary); border: none; padding: 10px 24px; border-radius: 20px; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.2s; box-shadow: var(--md-shadow); letter-spacing: 0.1px; }
+        .btn:hover { box-shadow: var(--md-shadow-lg); filter: brightness(1.08); }
+        .btn:active { transform: scale(0.98); }
+        .btn-outlined { background: transparent; color: var(--md-primary); border: 1px solid var(--md-outline); box-shadow: none; }
+        .btn-outlined:hover { background: rgba(103, 80, 164, 0.08); box-shadow: none; }
+        .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+        .stat-card { background: var(--md-primary-container); color: var(--md-on-primary-container); padding: 20px 16px; border-radius: 16px; text-align: center; }
+        .stat-num { font-size: 36px; font-weight: 400; line-height: 1; }
+        .stat-label { font-size: 12px; margin-top: 8px; opacity: 0.8; letter-spacing: 0.4px; }
+        #records { margin-top: 16px; }
+        .record-item { background: var(--md-surface-variant); padding: 16px; border-radius: 16px; margin-bottom: 8px; display: flex; gap: 12px; }
+        .record-user { font-weight: 500; color: var(--md-on-surface); font-size: 14px; }
+        .record-msg { color: var(--md-on-surface-variant); margin: 8px 0; word-break: break-all; font-size: 14px; line-height: 1.5; }
+        .record-reason { color: var(--md-tertiary); font-size: 12px; }
+        .record-time { color: var(--md-outline); font-size: 11px; margin-top: 6px; }
+        .loading { text-align: center; padding: 40px; color: var(--md-outline); font-size: 14px; }
+        .danger-btn { background: var(--md-error); }
+        .danger-btn:hover { background: #9a2018; }
+        .password-input, .search-input { padding: 12px 16px; border: none; border-radius: 20px; background: var(--md-surface-variant); color: var(--md-on-surface); font-size: 14px; outline: none; transition: all 0.2s; }
+        .password-input:focus, .search-input:focus { box-shadow: 0 0 0 2px var(--md-primary); }
+        .search-input { width: 100%; padding-left: 44px; }
+        .search-wrapper { position: relative; margin-bottom: 16px; }
+        .search-icon { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--md-outline); }
+        .btn-group { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+        .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); padding: 14px 24px; border-radius: 8px; color: var(--md-on-surface); font-size: 14px; z-index: 1000; animation: slideUp 0.3s ease; box-shadow: var(--md-shadow-lg); }
+        .toast-success { background: #C4EED0; }
+        .toast-error { background: #FFEDEA; }
+        @keyframes slideUp { from { transform: translate(-50%, 100%); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
+        .ranking-item { display: flex; align-items: center; padding: 12px 8px; border-radius: 16px; margin-bottom: 4px; }
+        .ranking-item:hover { background: var(--md-surface-variant); }
+        .ranking-num { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 500; margin-right: 12px; }
+        .ranking-1 { background: #FFD8E4; color: var(--md-tertiary); }
+        .ranking-2 { background: var(--md-surface-variant); color: var(--md-on-surface-variant); }
+        .ranking-3 { background: #FFE0B2; color: #E65100; }
+        .ranking-other { background: transparent; color: var(--md-outline); border: 1px solid var(--md-outline-variant); }
+        .ranking-info { flex: 1; margin-left: 8px; }
+        .ranking-name { font-weight: 500; color: var(--md-on-surface); font-size: 14px; }
+        .ranking-qq { font-size: 12px; color: var(--md-outline); margin-top: 2px; }
+        .ranking-group { font-size: 11px; color: var(--md-outline); }
+        .ranking-count { font-size: 18px; font-weight: 500; color: var(--md-primary); }
+        .ranking-count span { font-size: 11px; color: var(--md-outline); }
+        .ranking-avatar { width: 40px; height: 40px; border-radius: 50%; margin-left: 8px; object-fit: cover; }
+        .tabs { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+        .tab { padding: 8px 16px; border-radius: 8px; cursor: pointer; background: transparent; color: var(--md-on-surface-variant); font-size: 14px; font-weight: 500; transition: all 0.2s; border: none; }
+        .tab:hover { background: rgba(103, 80, 164, 0.08); }
+        .tab.active { background: var(--md-secondary-container); color: var(--md-on-secondary-container); }
+        .record-checkbox { width: 20px; height: 20px; accent-color: var(--md-primary); cursor: pointer; flex-shrink: 0; margin-top: 2px; }
+        select { padding: 8px 16px; border-radius: 8px; border: none; background: var(--md-surface-variant); color: var(--md-on-surface); font-size: 14px; cursor: pointer; outline: none; }
+        select:focus { box-shadow: 0 0 0 2px var(--md-primary); }
+        .record-content { flex: 1; }
+        .record-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+        .record-avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; }
+        .record-actions { display: flex; align-items: flex-start; gap: 8px; }
+        .delete-btn { background: transparent; color: var(--md-error); border: none; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 500; transition: all 0.2s; }
+        .delete-btn:hover { background: rgba(179, 38, 30, 0.08); }
+        .highlight { background: #FFF59D; border-radius: 2px; }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>群聊脏话监控</h1>
         <div class="card">
-            <h2 style="margin-bottom: 15px; color: #333;">统计概览</h2>
-            <div class="stats" id="stats">
+            <div class="stats">
                 <div class="stat-card"><div class="stat-num" id="total">-</div><div class="stat-label">总记录数</div></div>
                 <div class="stat-card"><div class="stat-num" id="users">-</div><div class="stat-label">涉及用户</div></div>
                 <div class="stat-card"><div class="stat-num" id="groups">-</div><div class="stat-label">涉及群组</div></div>
             </div>
         </div>
         <div class="card">
-            <h2 style="margin-bottom: 15px; color: #333;">脏话排行榜</h2>
+            <h2 style="margin-bottom: 12px;">脏话排行榜</h2>
             <div class="tabs">
                 <div class="tab active" onclick="switchTab('global')">总榜</div>
-                <select id="groupSelect" onchange="switchTab('group')" style="padding: 8px 16px; border-radius: 20px; border: 1px solid rgba(135, 206, 250, 0.3); background: rgba(135, 206, 250, 0.2); color: #5b9bd5; cursor: pointer;">
+                <select id="groupSelect" onchange="switchTab('group')">
                     <option value="">选择群聊</option>
                 </select>
             </div>
             <div id="ranking"><div class="loading">加载数据后显示排行榜</div></div>
         </div>
         <div class="card">
-            <h2 style="margin-bottom: 15px; color: #333;">管理操作</h2>
+            <h2 style="margin-bottom: 12px;">最近记录</h2>
+            <div class="search-wrapper">
+                <span class="search-icon">&#128269;</span>
+                <input type="text" class="search-input" id="searchInput" placeholder="搜索关键词、用户、群聊..." oninput="filterRecords()">
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-outlined" onclick="loadRecords()">刷新</button>
+                <span id="adminBtns" style="display: none; gap: 8px; display: none;">
+                    <button class="btn btn-outlined" onclick="selectAll()">全选</button>
+                    <button class="btn btn-outlined" onclick="selectNone()">取消</button>
+                    <button class="btn danger-btn" onclick="deleteSelected()" id="deleteSelectedBtn" style="display: none;">删除 (<span id="selectedCount">0</span>)</button>
+                </span>
+            </div>
+            <div id="records"><div class="loading">点击刷新加载数据</div></div>
+        </div>
+        <div class="card" style="text-align: center; padding: 16px;">
+            <span style="color: var(--md-outline); font-size: 13px;">
+                <a href="/records" target="_blank" style="color: var(--md-primary); text-decoration: none;">/records</a> · 
+                <a href="/stats" target="_blank" style="color: var(--md-primary); text-decoration: none;">/stats</a> · 
+                <a href="https://github.com/huanxherta/syemamalielie" target="_blank" style="color: var(--md-primary); text-decoration: none;">GitHub</a>
+            </span>
+        </div>
+        <div class="card">
+            <h2 style="margin-bottom: 12px;">管理</h2>
             <div id="loginSection">
                 <div class="btn-group">
-                    <input type="password" id="loginPassword" class="password-input" placeholder="输入管理密码">
+                    <input type="password" id="loginPassword" class="password-input" placeholder="管理密码">
                     <button class="btn" onclick="login()">登录</button>
                 </div>
             </div>
             <div id="adminSection" style="display: none;">
                 <div class="btn-group">
-                    <button class="btn" onclick="loadRecords()">刷新数据</button>
-                    <button class="btn danger-btn" onclick="clearRecords()">清空所有记录</button>
-                    <button class="btn" onclick="logout()">退出登录</button>
+                    <button class="btn" onclick="clearRecords()">清空全部</button>
+                    <button class="btn btn-outlined" onclick="logout()">退出</button>
                 </div>
             </div>
         </div>
-        <div class="card">
-            <h2 style="margin-bottom: 15px; color: #333;">最近记录</h2>
-            <div class="btn-group">
-                <button class="btn" onclick="loadRecords()">刷新数据</button>
-                <span id="adminBtns" style="display: none;">
-                    <button class="btn" onclick="selectAll()">全选</button>
-                    <button class="btn" onclick="selectNone()">取消全选</button>
-                    <button class="btn danger-btn" onclick="deleteSelected()" id="deleteSelectedBtn" style="display: none;">删除选中 (<span id="selectedCount">0</span>)</button>
-                </span>
-            </div>
-            <div id="records"><div class="loading">点击按钮加载数据</div></div>
-        </div>
-        <div class="card" style="text-align: center; padding: 15px;">
-            <span style="color: #999; font-size: 13px;">
-                API: <a href="/records" target="_blank" style="color: #5b9bd5;">/records</a> | 
-                <a href="/stats" target="_blank" style="color: #5b9bd5;">/stats</a> | 
-                <a href="https://github.com/huanxherta/syemamalielie" target="_blank" style="color: #5b9bd5;">文档</a>
-            </span>
-        </div>
     </div>
     <script>
+        window.allRecords = [];
+        function filterRecords() {
+            const keyword = document.getElementById('searchInput').value.toLowerCase();
+            const records = window.allRecords || [];
+            const isLoggedIn = !!window.adminToken;
+            let filtered = records;
+            if (keyword) {
+                filtered = records.filter(r => 
+                    (r.message && r.message.toLowerCase().includes(keyword)) ||
+                    (r.user_name && r.user_name.toLowerCase().includes(keyword)) ||
+                    (r.user_id && r.user_id.toString().includes(keyword)) ||
+                    (r.group_name && r.group_name.toLowerCase().includes(keyword)) ||
+                    (r.group_id && r.group_id.toString().includes(keyword)) ||
+                    (r.reason && r.reason.toLowerCase().includes(keyword))
+                );
+            }
+            renderRecords(filtered.slice(-50).reverse(), filtered.length, isLoggedIn);
+        }
+        function renderRecords(records, total, isLoggedIn) {
+            const html = records.map((r, displayIdx) => {
+                const realIdx = total - 1 - displayIdx;
+                return `
+                <div class="record-item" id="record-${realIdx}">
+                    ${isLoggedIn ? `<input type="checkbox" class="record-checkbox" data-index="${realIdx}" onchange="toggleSelect(${realIdx})">` : ''}
+                    <div class="record-content">
+                        <div class="record-header">
+                            <img class="record-avatar" src="${getAvatarUrl(r.user_id)}" onerror="this.style.display='none'">
+                            <div>
+                                <div class="record-user">${r.user_name}</div>
+                                <div style="font-size: 11px; color: var(--md-outline);">${r.group_name || '未知群聊'}</div>
+                            </div>
+                        </div>
+                        <div class="record-msg">${r.message}</div>
+                        <div class="record-reason">${r.reason}</div>
+                        <div class="record-time">${new Date(r.time).toLocaleString('zh-CN')}</div>
+                    </div>
+                    ${isLoggedIn ? `<button class="delete-btn" onclick="deleteSingle(${realIdx})">删除</button>` : ''}
+                </div>
+            `}).join('');
+            document.getElementById('records').innerHTML = html || '<div class="loading">暂无记录</div>';
+        }
         async function loadRecords() {
             document.getElementById('records').innerHTML = '<div class="loading">加载中...</div>';
             try {
@@ -213,36 +287,14 @@ class ProfanityMonitor(Star):
                 const data = await res.json();
                 const records = data.data || [];
                 window.records = records;
+                window.allRecords = records;
                 window.selectedIndices = new Set();
                 document.getElementById('total').textContent = records.length;
                 const users = new Set(records.map(r => r.user_id));
                 const groups = new Set(records.map(r => r.group_id));
                 document.getElementById('users').textContent = users.size;
                 document.getElementById('groups').textContent = groups.size;
-                const isLoggedIn = !!window.adminToken;
-                const html = records.slice(-20).reverse().map((r, displayIdx) => {
-                    const realIdx = records.length - 1 - displayIdx;
-                    return `
-                    <div class="record-item" id="record-${realIdx}">
-                        <div style="display: flex; align-items: flex-start; gap: 10px;">
-                            ${isLoggedIn ? `<input type="checkbox" class="record-checkbox" data-index="${realIdx}" onchange="toggleSelect(${realIdx})" style="margin-top: 5px;">` : ''}
-                            <div style="flex: 1;">
-                                <div style="display: flex; align-items: center; margin-bottom: 8px;">
-                                    <img src="${getAvatarUrl(r.user_id)}" style="width: 32px; height: 32px; border-radius: 50%; margin-right: 10px;" onerror="this.style.display='none'">
-                                    <div>
-                                        <div class="record-user">${r.user_name}</div>
-                                        <div style="font-size: 12px; color: #999;">QQ: ${maskQQ(r.user_id)}</div>
-                                    </div>
-                                </div>
-                                <div class="record-msg">${r.message}</div>
-                                <div class="record-reason">${r.reason}</div>
-                                <div class="record-time">${new Date(r.time).toLocaleString('zh-CN')}</div>
-                            </div>
-                            ${isLoggedIn ? `<button class="btn danger-btn" onclick="deleteSingle(${realIdx})" style="padding: 5px 10px; font-size: 12px;">删除</button>` : ''}
-                        </div>
-                    </div>
-                `}).join('');
-                document.getElementById('records').innerHTML = html || '<div class="loading">暂无记录</div>';
+                filterRecords();
                 updateDeleteBtn();
                 updateGroupSelect();
                 updateRanking('global');
