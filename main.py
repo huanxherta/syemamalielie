@@ -235,9 +235,9 @@ class ProfanityMonitor(Star):
             }
             const userStats = {};
             filtered.forEach(r => {
-                const key = r.user_id;
+                const key = r.user_id;  // 使用QQ号作为唯一标识
                 if (!userStats[key]) {
-                    userStats[key] = { name: r.user_name, count: 0, groups: {} };
+                    userStats[key] = { qq: r.user_id, name: r.user_name, count: 0, groups: {} };
                 }
                 userStats[key].count++;
                 if (!userStats[key].groups[r.group_id]) {
@@ -257,7 +257,7 @@ class ProfanityMonitor(Star):
                     <div class="ranking-item">
                         <div class="ranking-num ${rankClass}">${index + 1}</div>
                         <div class="ranking-info">
-                            <div class="ranking-name">${info.name}</div>
+                            <div class="ranking-name">${info.name} (${info.qq})</div>
                             <div class="ranking-group">涉及 ${groupInfo}</div>
                         </div>
                         <div class="ranking-count">${info.count}<span>次</span></div>
@@ -497,7 +497,7 @@ class ProfanityMonitor(Star):
                 record = {
                     "time": datetime.now().isoformat(),
                     "group_id": group_id,
-                    "user_id": event.get_sender_id(),
+                    "user_id": event.get_sender_id(),  # QQ号
                     "user_name": event.get_sender_name(),
                     "message": message_str,
                     "reason": result.get("reason", ""),
