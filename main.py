@@ -170,7 +170,9 @@ class ProfanityMonitor(Star):
             <h2 style="margin-bottom: 15px; color: #333;">脏话排行榜</h2>
             <div class="tabs">
                 <div class="tab active" onclick="switchTab('global')">总榜</div>
-                <div class="tab" onclick="switchTab('group')">本群</div>
+                <select id="groupSelect" onchange="switchTab('group')" style="padding: 8px 16px; border-radius: 20px; border: 1px solid rgba(135, 206, 250, 0.3); background: rgba(135, 206, 250, 0.2); color: #5b9bd5; cursor: pointer;">
+                    <option value="">选择群聊</option>
+                </select>
             </div>
             <div id="ranking"><div class="loading">加载数据后显示排行榜</div></div>
         </div>
@@ -242,6 +244,7 @@ class ProfanityMonitor(Star):
                 `}).join('');
                 document.getElementById('records').innerHTML = html || '<div class="loading">暂无记录</div>';
                 updateDeleteBtn();
+                updateGroupSelect();
                 updateRanking('global');
             } catch(e) {
                 document.getElementById('records').innerHTML = '<div class="loading">加载失败</div>';
@@ -322,8 +325,11 @@ class ProfanityMonitor(Star):
         let currentTab = 'global';
         function switchTab(tab) {
             currentTab = tab;
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            event.target.classList.add('active');
+            if (tab === 'global') {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                event.target.classList.add('active');
+                document.getElementById('groupSelect').value = '';
+            }
             updateRanking(tab);
         }
         function maskQQ(qq) {
@@ -338,10 +344,13 @@ class ProfanityMonitor(Star):
         function updateRanking(type) {
             const records = window.records || [];
             let filtered = records;
+            let selectedGroupId = '';
             if (type === 'group') {
-                const lastRecord = records[records.length - 1];
-                if (lastRecord) {
-                    filtered = records.filter(r => r.group_id === lastRecord.group_id);
+                selectedGroupId = document.getElementById('groupSelect').value;
+                if (selectedGroupId) {
+                    filtered = records.filter(r => r.group_id === selectedGroupId);
+                } else {
+                    filtered = [];
                 }
             }
             const userStats = {};
@@ -379,8 +388,23 @@ class ProfanityMonitor(Star):
             }).join('');
             document.getElementById('ranking').innerHTML = html;
         }
+        function updateGroupSelect() {
+            const records = window.records || [];
+            const groups = [...new Set(records.map(r => r.group_id))];
+            const select = document.getElementById('groupSelect');
+            select.innerHTML = '<option value="">选择群聊</option>';
+            groups.forEach(gid => {
+                const option = document.createElement('option');
+                option.value = gid;
+                option.textContent = `群 ${gid}`;
+                select.appendChild(option);
+            });
+        }
         let adminToken = localStorage.getItem('adminToken') || '';
+        window.adminToken = adminToken;
         function checkLogin() {
+            adminToken = localStorage.getItem('adminToken') || '';
+            window.adminToken = adminToken;
             if (adminToken) {
                 document.getElementById('loginSection').style.display = 'none';
                 document.getElementById('adminSection').style.display = 'block';
