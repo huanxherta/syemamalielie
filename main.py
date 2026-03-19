@@ -54,9 +54,21 @@ class ProfanityMonitor(Star):
         app.router.add_get("/api/stats", self._handle_get_stats)
         self.http_runner = web.AppRunner(app)
         await self.http_runner.setup()
-        self.http_site = web.TCPSite(self.http_runner, self.host, self.port)
-        await self.http_site.start()
-        logger.info(f"HTTP API 已启动: http://{self.host}:{self.port}")
+        try:
+            self.http_site = web.TCPSite(self.http_runner, self.host, self.port)
+            await self.http_site.start()
+            logger.info(f"HTTP API 已启动: http://{self.host}:{self.port}")
+        except OSError as e:
+            if e.errno == 98:
+                logger.warning(
+                    f"端口 {self.port} 已被占用，尝试使用端口 {self.port + 1}"
+                )
+                self.port += 1
+                self.http_site = web.TCPSite(self.http_runner, self.host, self.port)
+                await self.http_site.start()
+                logger.info(f"HTTP API 已启动: http://{self.host}:{self.port}")
+            else:
+                raise
 
     async def _handle_get_records(self, request: web.Request) -> web.Response:
         return web.json_response({"code": 0, "data": self.records})
