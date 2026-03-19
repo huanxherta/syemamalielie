@@ -167,11 +167,25 @@ class ProfanityMonitor(Star):
             <div id="ranking"><div class="loading">加载数据后显示排行榜</div></div>
         </div>
         <div class="card">
+            <h2 style="margin-bottom: 15px; color: #333;">管理操作</h2>
+            <div id="loginSection">
+                <div class="btn-group">
+                    <input type="password" id="loginPassword" class="password-input" placeholder="输入管理密码">
+                    <button class="btn" onclick="login()">登录</button>
+                </div>
+            </div>
+            <div id="adminSection" style="display: none;">
+                <div class="btn-group">
+                    <button class="btn" onclick="loadRecords()">刷新数据</button>
+                    <button class="btn danger-btn" onclick="clearRecords()">清空所有记录</button>
+                    <button class="btn" onclick="logout()">退出登录</button>
+                </div>
+            </div>
+        </div>
+        <div class="card">
             <h2 style="margin-bottom: 15px; color: #333;">最近记录</h2>
             <div class="btn-group">
                 <button class="btn" onclick="loadRecords()">刷新数据</button>
-                <input type="password" id="clearPassword" class="password-input" placeholder="输入管理密码">
-                <button class="btn danger-btn" onclick="clearRecords()">清空所有记录</button>
             </div>
             <div id="records"><div class="loading">点击按钮加载数据</div></div>
         </div>
@@ -252,6 +266,48 @@ class ProfanityMonitor(Star):
             }).join('');
             document.getElementById('ranking').innerHTML = html;
         }
+        let adminToken = localStorage.getItem('adminToken') || '';
+        function checkLogin() {
+            if (adminToken) {
+                document.getElementById('loginSection').style.display = 'none';
+                document.getElementById('adminSection').style.display = 'block';
+            } else {
+                document.getElementById('loginSection').style.display = 'block';
+                document.getElementById('adminSection').style.display = 'none';
+            }
+        }
+        async function login() {
+            const password = document.getElementById('loginPassword').value;
+            if (!password) {
+                showToast('请输入管理密码', 'error');
+                return;
+            }
+            try {
+                const res = await fetch('/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password })
+                });
+                const data = await res.json();
+                if (data.code === 0) {
+                    adminToken = data.token;
+                    localStorage.setItem('adminToken', adminToken);
+                    checkLogin();
+                    showToast('登录成功', 'success');
+                    document.getElementById('loginPassword').value = '';
+                } else {
+                    showToast(data.msg, 'error');
+                }
+            } catch(e) {
+                showToast('登录失败', 'error');
+            }
+        }
+        function logout() {
+            adminToken = '';
+            localStorage.removeItem('adminToken');
+            checkLogin();
+            showToast('已退出登录', 'success');
+        }
         function showToast(msg, type) {
             const toast = document.createElement('div');
             toast.className = 'toast toast-' + type;
@@ -260,9 +316,8 @@ class ProfanityMonitor(Star):
             setTimeout(() => toast.remove(), 3000);
         }
         async function clearRecords() {
-            const password = document.getElementById('clearPassword').value;
-            if (!password) {
-                showToast('请输入管理密码', 'error');
+            if (!adminToken) {
+                showToast('请先登录', 'error');
                 return;
             }
             if (!confirm('确定要清空所有记录吗？此操作不可恢复！')) {
@@ -272,7 +327,7 @@ class ProfanityMonitor(Star):
                 const res = await fetch('/clear', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ password })
+                    body: JSON.stringify({ token: adminToken })
                 });
                 const data = await res.json();
                 if (data.code === 0) {
@@ -280,11 +335,15 @@ class ProfanityMonitor(Star):
                     loadRecords();
                 } else {
                     showToast(data.msg, 'error');
+                    if (data.msg.includes('登录')) {
+                        logout();
+                    }
                 }
             } catch(e) {
                 showToast('操作失败', 'error');
             }
         }
+        checkLogin();
     </script>
 </body>
 </html>"""
