@@ -624,7 +624,10 @@ class ProfanityMonitor(Star):
             return
         try:
             prompt = (
-                "请判断以下消息是否包含脏话、辱骂、侮辱性词汇。"
+                "请判断以下消息是否包含脏话、辱骂、侮辱性词汇，包括但不限于："
+                "1. 直接的脏话粗口 2. 谐音替代（如tm、卧槽、尼玛等） "
+                "3. 拼音首字母缩写（如nmsl、wc等）4. 黑话暗语 "
+                "5. 网络流行梗中的侮辱性表达 6. 符号替代（如*、#等）"
                 '只回复一个JSON对象：{"is_profanity": true/false, "reason": "原因"}。\n'
                 f"消息内容：{message_str}"
             )
