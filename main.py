@@ -56,8 +56,8 @@ class ProfanityMonitor(Star):
     async def _start_http_server(self):
         app = web.Application()
         app.router.add_get("/", self._handle_index)
-        app.router.add_get("/api/records", self._handle_get_records)
-        app.router.add_get("/api/stats", self._handle_get_stats)
+        app.router.add_get("/records", self._handle_get_records)
+        app.router.add_get("/stats", self._handle_get_stats)
         self.http_runner = web.AppRunner(app)
         await self.http_runner.setup()
         try:
@@ -115,8 +115,8 @@ class ProfanityMonitor(Star):
         <div class="card">
             <h2 style="margin-bottom: 15px; color: #333;">API 接口</h2>
             <ul class="api-list">
-                <li><span class="api-path">GET /api/records</span><span class="api-desc">获取所有脏话记录</span></li>
-                <li><span class="api-path">GET /api/stats</span><span class="api-desc">获取用户脏话统计</span></li>
+                <li><span class="api-path">GET /records</span><span class="api-desc">获取所有脏话记录</span></li>
+                <li><span class="api-path">GET /stats</span><span class="api-desc">获取用户脏话统计</span></li>
             </ul>
         </div>
         <div class="card">
@@ -137,7 +137,7 @@ class ProfanityMonitor(Star):
         async function loadRecords() {
             document.getElementById('records').innerHTML = '<div class="loading">加载中...</div>';
             try {
-                const res = await fetch('/api/records');
+                const res = await fetch('/records');
                 const data = await res.json();
                 const records = data.data || [];
                 document.getElementById('total').textContent = records.length;
