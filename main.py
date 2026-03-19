@@ -102,512 +102,259 @@ class ProfanityMonitor(Star):
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>群聊脏话监控</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         :root {
-            --md-primary: #6750A4;
-            --md-on-primary: #FFFFFF;
-            --md-primary-container: #EADDFF;
-            --md-on-primary-container: #21005D;
-            --md-secondary: #625B71;
-            --md-on-secondary: #FFFFFF;
-            --md-secondary-container: #E8DEF8;
-            --md-on-secondary-container: #1D192B;
-            --md-tertiary: #7D5260;
-            --md-on-tertiary: #FFFFFF;
-            --md-tertiary-container: #FFD8E4;
-            --md-surface: #FEF7FF;
-            --md-surface-variant: #E7E0EC;
-            --md-on-surface: #1C1B1F;
-            --md-on-surface-variant: #49454F;
-            --md-outline: #79747E;
-            --md-outline-variant: #CAC4D0;
-            --md-error: #B3261E;
-            --md-shadow: 0 1px 3px 1px rgba(0,0,0,0.15), 0 1px 2px rgba(0,0,0,0.3);
-            --md-shadow-lg: 0 4px 8px 3px rgba(0,0,0,0.15), 0 1px 3px rgba(0,0,0,0.3);
+            --ios-bg: #F2F2F7;
+            --ios-card: rgba(255,255,255,0.82);
+            --ios-blue: #007AFF;
+            --ios-red: #FF3B30;
+            --ios-green: #34C759;
+            --ios-orange: #FF9500;
+            --ios-gray: #8E8E93;
+            --ios-gray2: #AEAEB2;
+            --ios-gray3: #C7C7CC;
+            --ios-gray4: #D1D1D6;
+            --ios-gray5: #E5E5EA;
+            --ios-gray6: #F2F2F7;
+            --ios-label: #000000;
+            --ios-label2: #3C3C43;
+            --ios-separator: rgba(60,60,67,0.12);
         }
-        body { font-family: 'Google Sans', 'Roboto', 'Noto Sans SC', sans-serif; background: url('https://imgbed.iqach.top/file/1773915308321_92650004_p0.jpg') no-repeat center center fixed; background-size: cover; min-height: 100vh; padding: 16px; }
-        .container { max-width: 840px; margin: 0 auto; }
-        .card { background: rgba(254, 247, 255, 0.92); backdrop-filter: blur(20px); border-radius: 28px; padding: 24px; margin-bottom: 16px; box-shadow: var(--md-shadow); }
-        h1 { color: var(--md-primary); text-align: center; margin-bottom: 24px; font-size: 28px; font-weight: 400; letter-spacing: 0.5px; }
-        h2 { color: var(--md-on-surface) !important; font-size: 16px !important; font-weight: 500 !important; letter-spacing: 0.15px; }
-        .btn { background: var(--md-primary); color: var(--md-on-primary); border: none; padding: 10px 24px; border-radius: 20px; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.2s; box-shadow: var(--md-shadow); letter-spacing: 0.1px; }
-        .btn:hover { box-shadow: var(--md-shadow-lg); filter: brightness(1.08); }
-        .btn:active { transform: scale(0.98); }
-        .btn-outlined { background: transparent; color: var(--md-primary); border: 1px solid var(--md-outline); box-shadow: none; }
-        .btn-outlined:hover { background: rgba(103, 80, 164, 0.08); box-shadow: none; }
-        .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-        .stat-card { background: var(--md-primary-container); color: var(--md-on-primary-container); padding: 20px 16px; border-radius: 16px; text-align: center; }
-        .stat-num { font-size: 36px; font-weight: 400; line-height: 1; }
-        .stat-label { font-size: 12px; margin-top: 8px; opacity: 0.8; letter-spacing: 0.4px; }
-        #records { margin-top: 16px; }
-        .record-item { background: var(--md-surface-variant); padding: 16px; border-radius: 16px; margin-bottom: 8px; display: flex; gap: 12px; }
-        .record-user { font-weight: 500; color: var(--md-on-surface); font-size: 14px; }
-        .record-msg { color: var(--md-on-surface-variant); margin: 8px 0; word-break: break-all; font-size: 14px; line-height: 1.5; }
-        .record-reason { color: var(--md-tertiary); font-size: 12px; }
-        .record-time { color: var(--md-outline); font-size: 11px; margin-top: 6px; }
-        .loading { text-align: center; padding: 40px; color: var(--md-outline); font-size: 14px; }
-        .danger-btn { background: var(--md-error); }
-        .danger-btn:hover { background: #9a2018; }
-        .password-input, .search-input { padding: 12px 16px; border: none; border-radius: 20px; background: var(--md-surface-variant); color: var(--md-on-surface); font-size: 14px; outline: none; transition: all 0.2s; }
-        .password-input:focus, .search-input:focus { box-shadow: 0 0 0 2px var(--md-primary); }
-        .search-input { width: 100%; padding-left: 44px; }
-        .search-wrapper { position: relative; margin-bottom: 16px; }
-        .search-icon { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--md-outline); }
-        .btn-group { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-        .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); padding: 14px 24px; border-radius: 8px; color: var(--md-on-surface); font-size: 14px; z-index: 1000; animation: slideUp 0.3s ease; box-shadow: var(--md-shadow-lg); }
-        .toast-success { background: #C4EED0; }
-        .toast-error { background: #FFEDEA; }
-        @keyframes slideUp { from { transform: translate(-50%, 100%); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
-        .ranking-item { display: flex; align-items: center; padding: 12px 8px; border-radius: 16px; margin-bottom: 4px; }
-        .ranking-item:hover { background: var(--md-surface-variant); }
-        .ranking-num { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 500; margin-right: 12px; }
-        .ranking-1 { background: #FFD8E4; color: var(--md-tertiary); }
-        .ranking-2 { background: var(--md-surface-variant); color: var(--md-on-surface-variant); }
-        .ranking-3 { background: #FFE0B2; color: #E65100; }
-        .ranking-other { background: transparent; color: var(--md-outline); border: 1px solid var(--md-outline-variant); }
-        .ranking-info { flex: 1; margin-left: 8px; }
-        .ranking-name { font-weight: 500; color: var(--md-on-surface); font-size: 14px; }
-        .ranking-qq { font-size: 12px; color: var(--md-outline); margin-top: 2px; }
-        .ranking-group { font-size: 11px; color: var(--md-outline); }
-        .ranking-count { font-size: 18px; font-weight: 500; color: var(--md-primary); }
-        .ranking-count span { font-size: 11px; color: var(--md-outline); }
-        .ranking-avatar { width: 40px; height: 40px; border-radius: 50%; margin-left: 8px; object-fit: cover; }
-        .tabs { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
-        .tab { padding: 8px 16px; border-radius: 8px; cursor: pointer; background: transparent; color: var(--md-on-surface-variant); font-size: 14px; font-weight: 500; transition: all 0.2s; border: none; }
-        .tab:hover { background: rgba(103, 80, 164, 0.08); }
-        .tab.active { background: var(--md-secondary-container); color: var(--md-on-secondary-container); }
-        .record-checkbox { width: 20px; height: 20px; accent-color: var(--md-primary); cursor: pointer; flex-shrink: 0; margin-top: 2px; }
-        select { padding: 8px 16px; border-radius: 8px; border: none; background: var(--md-surface-variant); color: var(--md-on-surface); font-size: 14px; cursor: pointer; outline: none; }
-        select:focus { box-shadow: 0 0 0 2px var(--md-primary); }
-        .record-content { flex: 1; }
-        .record-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
-        .record-avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; }
-        .record-actions { display: flex; align-items: flex-start; gap: 8px; }
-        .delete-btn { background: transparent; color: var(--md-error); border: none; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 500; transition: all 0.2s; }
-        .delete-btn:hover { background: rgba(179, 38, 30, 0.08); }
-        .highlight { background: #FFF59D; border-radius: 2px; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Helvetica Neue', 'PingFang SC', 'Noto Sans CJK SC', sans-serif;
+            background: url('https://imgbed.iqach.top/file/1773915308321_92650004_p0.jpg') no-repeat center center fixed;
+            background-size: cover;
+            min-height: 100vh;
+            padding: 20px 16px;
+            -webkit-font-smoothing: antialiased;
+        }
+        body::before { content: ''; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(242,242,247,0.6); z-index: -1; }
+        .container { max-width: 428px; margin: 0 auto; }
+        .ios-header { text-align: center; margin-bottom: 20px; }
+        .ios-header h1 { font-size: 34px; font-weight: 700; color: var(--ios-label); letter-spacing: -0.5px; }
+        .ios-section { background: var(--ios-card); backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px); border-radius: 13px; overflow: hidden; margin-bottom: 20px; }
+        .ios-section-header { padding: 12px 16px 8px; font-size: 13px; font-weight: 400; color: var(--ios-gray); text-transform: uppercase; letter-spacing: -0.08px; }
+        .ios-row { display: flex; align-items: center; padding: 12px 16px; background: var(--ios-card); position: relative; }
+        .ios-row:not(:last-child)::after { content: ''; position: absolute; bottom: 0; left: 54px; right: 16px; height: 0.5px; background: var(--ios-separator); }
+        .ios-row-content { flex: 1; }
+        .ios-row-title { font-size: 17px; color: var(--ios-label); line-height: 1.2; }
+        .ios-row-subtitle { font-size: 14px; color: var(--ios-gray); margin-top: 2px; }
+        .ios-row-value { font-size: 17px; color: var(--ios-gray); }
+        .ios-row-arrow { color: var(--ios-gray3); margin-left: 8px; font-size: 14px; }
+        .ios-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--ios-separator); }
+        .ios-stat { background: var(--ios-card); padding: 16px 8px; text-align: center; }
+        .ios-stat-num { font-size: 28px; font-weight: 600; color: var(--ios-blue); font-variant-numeric: tabular-nums; }
+        .ios-stat-label { font-size: 12px; color: var(--ios-gray); margin-top: 4px; }
+        .ios-btn { display: inline-block; padding: 8px 16px; border-radius: 8px; font-size: 15px; font-weight: 400; border: none; cursor: pointer; transition: all 0.15s; }
+        .ios-btn:active { transform: scale(0.97); opacity: 0.7; }
+        .ios-btn-primary { background: var(--ios-blue); color: white; }
+        .ios-btn-red { background: var(--ios-red); color: white; }
+        .ios-btn-gray { background: var(--ios-gray5); color: var(--ios-label); }
+        .ios-btn-text { background: transparent; color: var(--ios-blue); padding: 8px 12px; }
+        .ios-input { width: 100%; padding: 10px 12px; border: none; border-radius: 8px; background: var(--ios-gray6); font-size: 17px; outline: none; }
+        .ios-input::placeholder { color: var(--ios-gray2); }
+        .ios-search { position: relative; margin: 0 16px 12px; }
+        .ios-search input { padding-left: 36px; }
+        .ios-search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--ios-gray); font-size: 16px; }
+        .ios-tabs { display: flex; padding: 0 16px 12px; gap: 8px; }
+        .ios-tab { padding: 6px 12px; border-radius: 16px; font-size: 13px; font-weight: 500; background: var(--ios-gray5); color: var(--ios-label2); cursor: pointer; transition: all 0.15s; border: none; }
+        .ios-tab.active { background: var(--ios-blue); color: white; }
+        .ios-select { padding: 6px 12px; border-radius: 16px; font-size: 13px; background: var(--ios-gray5); color: var(--ios-label2); border: none; cursor: pointer; outline: none; }
+        .ranking-avatar { width: 44px; height: 44px; border-radius: 50%; margin-right: 12px; object-fit: cover; }
+        .ranking-badge { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; margin-right: 12px; flex-shrink: 0; }
+        .rank-1 { background: linear-gradient(135deg, #FFD700, #FFA500); color: white; }
+        .rank-2 { background: linear-gradient(135deg, #C0C0C0, #A0A0A0); color: white; }
+        .rank-3 { background: linear-gradient(135deg, #CD7F32, #8B4513); color: white; }
+        .rank-other { background: var(--ios-gray5); color: var(--ios-gray); }
+        .ranking-count { font-size: 20px; font-weight: 600; color: var(--ios-label); }
+        .ranking-count span { font-size: 12px; color: var(--ios-gray); font-weight: 400; }
+        .record-avatar { width: 40px; height: 40px; border-radius: 50%; margin-right: 12px; flex-shrink: 0; object-fit: cover; }
+        .record-checkbox { width: 20px; height: 20px; margin-right: 12px; accent-color: var(--ios-blue); flex-shrink: 0; }
+        .delete-text-btn { background: none; border: none; color: var(--ios-red); font-size: 15px; cursor: pointer; padding: 4px 0; }
+        .ios-btns { display: flex; gap: 8px; padding: 0 16px 12px; flex-wrap: wrap; }
+        .toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); padding: 12px 24px; border-radius: 12px; font-size: 15px; z-index: 1000; animation: toastIn 0.3s ease; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+        .toast-success { background: rgba(52,199,89,0.9); color: white; }
+        .toast-error { background: rgba(255,59,48,0.9); color: white; }
+        @keyframes toastIn { from { transform: translate(-50%, 20px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
+        .loading { text-align: center; padding: 40px; color: var(--ios-gray); font-size: 15px; }
+        .ios-footer { text-align: center; padding: 16px; font-size: 13px; color: var(--ios-gray); }
+        .ios-footer a { color: var(--ios-blue); text-decoration: none; }
+        .ios-pw-group { display: flex; gap: 8px; padding: 0 16px 12px; }
+        .ios-pw-group input { flex: 1; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>群聊脏话监控</h1>
-        <div class="card">
-            <div class="stats">
-                <div class="stat-card"><div class="stat-num" id="total">-</div><div class="stat-label">总记录数</div></div>
-                <div class="stat-card"><div class="stat-num" id="users">-</div><div class="stat-label">涉及用户</div></div>
-                <div class="stat-card"><div class="stat-num" id="groups">-</div><div class="stat-label">涉及群组</div></div>
+        <div class="ios-header"><h1>监控</h1></div>
+        <div class="ios-section">
+            <div class="ios-stats">
+                <div class="ios-stat"><div class="ios-stat-num" id="total">-</div><div class="ios-stat-label">总记录</div></div>
+                <div class="ios-stat"><div class="ios-stat-num" id="users">-</div><div class="ios-stat-label">用户</div></div>
+                <div class="ios-stat"><div class="ios-stat-num" id="groups">-</div><div class="ios-stat-label">群组</div></div>
             </div>
         </div>
-        <div class="card">
-            <h2 style="margin-bottom: 12px;">脏话排行榜</h2>
-            <div class="tabs">
-                <div class="tab active" onclick="switchTab('global')">总榜</div>
-                <select id="groupSelect" onchange="switchTab('group')">
-                    <option value="">选择群聊</option>
-                </select>
+        <div class="ios-section">
+            <div class="ios-section-header">排行榜</div>
+            <div class="ios-tabs">
+                <button class="ios-tab active" onclick="switchTab('global')">总榜</button>
+                <select class="ios-select" id="groupSelect" onchange="switchTab('group')"><option value="">选择群聊</option></select>
             </div>
-            <div id="ranking"><div class="loading">加载数据后显示排行榜</div></div>
+            <div id="ranking"><div class="loading">加载中...</div></div>
         </div>
-        <div class="card">
-            <h2 style="margin-bottom: 12px;">最近记录</h2>
-            <div class="search-wrapper">
-                <span class="search-icon">&#128269;</span>
-                <input type="text" class="search-input" id="searchInput" placeholder="搜索关键词、用户、群聊..." oninput="filterRecords()">
+        <div class="ios-section">
+            <div class="ios-section-header">记录</div>
+            <div class="ios-search">
+                <span class="ios-search-icon">&#128269;</span>
+                <input class="ios-input" id="searchInput" placeholder="搜索..." oninput="filterRecords()">
             </div>
-            <div class="tabs">
-                <div class="tab active" onclick="switchRecordTab('all')">全部</div>
-                <select id="recordGroupSelect" onchange="switchRecordTab('group')">
-                    <option value="">选择群聊</option>
-                </select>
+            <div class="ios-tabs">
+                <button class="ios-tab active" onclick="switchRecordTab('all')">全部</button>
+                <select class="ios-select" id="recordGroupSelect" onchange="switchRecordTab('group')"><option value="">选择群聊</option></select>
             </div>
-            <div class="btn-group">
-                <button class="btn btn-outlined" onclick="loadRecords()">刷新</button>
-                <span id="adminBtns" style="display: none; gap: 8px; display: none;">
-                    <button class="btn btn-outlined" onclick="selectAll()">全选</button>
-                    <button class="btn btn-outlined" onclick="selectNone()">取消</button>
-                    <button class="btn danger-btn" onclick="deleteSelected()" id="deleteSelectedBtn" style="display: none;">删除 (<span id="selectedCount">0</span>)</button>
+            <div class="ios-btns">
+                <button class="ios-btn ios-btn-gray" onclick="loadRecords()">刷新</button>
+                <span id="adminBtns" style="display:none;">
+                    <button class="ios-btn ios-btn-gray" onclick="selectAll()">全选</button>
+                    <button class="ios-btn ios-btn-gray" onclick="selectNone()">取消</button>
+                    <button class="ios-btn ios-btn-red" onclick="deleteSelected()" id="deleteSelectedBtn" style="display:none;">删除(<span id="selectedCount">0</span>)</button>
                 </span>
             </div>
-            <div id="records"><div class="loading">点击刷新加载数据</div></div>
+            <div id="records"><div class="loading">点击刷新</div></div>
         </div>
-        <div class="card" style="text-align: center; padding: 16px;">
-            <span style="color: var(--md-outline); font-size: 13px;">
-                <a href="/records" target="_blank" style="color: var(--md-primary); text-decoration: none;">/records</a> · 
-                <a href="/stats" target="_blank" style="color: var(--md-primary); text-decoration: none;">/stats</a> · 
-                <a href="https://github.com/huanxherta/syemamalielie" target="_blank" style="color: var(--md-primary); text-decoration: none;">GitHub</a>
-            </span>
-        </div>
-        <div class="card">
-            <h2 style="margin-bottom: 12px;">管理</h2>
+        <div class="ios-section">
+            <div class="ios-section-header">管理</div>
             <div id="loginSection">
-                <div class="btn-group">
-                    <input type="password" id="loginPassword" class="password-input" placeholder="管理密码">
-                    <button class="btn" onclick="login()">登录</button>
+                <div class="ios-pw-group">
+                    <input type="password" class="ios-input" id="loginPassword" placeholder="管理密码">
+                    <button class="ios-btn ios-btn-primary" onclick="login()">登录</button>
                 </div>
             </div>
-            <div id="adminSection" style="display: none;">
-                <div class="btn-group">
-                    <button class="btn" onclick="clearRecords()">清空全部</button>
-                    <button class="btn btn-outlined" onclick="logout()">退出</button>
+            <div id="adminSection" style="display:none;">
+                <div class="ios-btns">
+                    <button class="ios-btn ios-btn-red" onclick="clearRecords()">清空全部</button>
+                    <button class="ios-btn ios-btn-gray" onclick="logout()">退出</button>
                 </div>
             </div>
+        </div>
+        <div class="ios-footer">
+            <a href="/records">/records</a> · <a href="/stats">/stats</a> · <a href="https://github.com/huanxherta/syemamalielie">GitHub</a>
         </div>
     </div>
     <script>
         window.allRecords = [];
         window.currentRecordGroup = '';
         function getGroupName(r) {
-            return (r.group_name && r.group_name.trim()) || `群${r.group_id}`;
+            if (r.group_name && r.group_name.trim()) return r.group_name.trim();
+            return '群' + r.group_id;
         }
         function switchRecordTab(type) {
-            if (type === 'all') {
-                window.currentRecordGroup = '';
-                document.getElementById('recordGroupSelect').value = '';
-            } else {
-                window.currentRecordGroup = document.getElementById('recordGroupSelect').value;
-            }
+            window.currentRecordGroup = type === 'all' ? '' : document.getElementById('recordGroupSelect').value;
             filterRecords();
         }
         function filterRecords() {
-            const keyword = document.getElementById('searchInput').value.toLowerCase();
-            const records = window.allRecords || [];
-            const isLoggedIn = !!window.adminToken;
-            let filtered = records;
-            if (window.currentRecordGroup) {
-                filtered = filtered.filter(r => r.group_id === window.currentRecordGroup);
-            }
-            if (keyword) {
-                filtered = filtered.filter(r => 
-                    (r.message && r.message.toLowerCase().includes(keyword)) ||
-                    (r.user_name && r.user_name.toLowerCase().includes(keyword)) ||
-                    (r.user_id && r.user_id.toString().includes(keyword)) ||
-                    (getGroupName(r).toLowerCase().includes(keyword)) ||
-                    (r.group_id && r.group_id.toString().includes(keyword)) ||
-                    (r.reason && r.reason.toLowerCase().includes(keyword))
-                );
-            }
-            renderRecords(filtered.slice(-50).reverse(), filtered.length, isLoggedIn);
+            const kw = document.getElementById('searchInput').value.toLowerCase();
+            let records = window.allRecords || [];
+            if (window.currentRecordGroup) records = records.filter(r => r.group_id === window.currentRecordGroup);
+            if (kw) records = records.filter(r => 
+                (r.message||'').toLowerCase().includes(kw) ||
+                (r.user_name||'').toLowerCase().includes(kw) ||
+                (r.user_id||'').toString().includes(kw) ||
+                getGroupName(r).toLowerCase().includes(kw) ||
+                (r.reason||'').toLowerCase().includes(kw)
+            );
+            renderRecords(records.slice(-50).reverse(), records.length);
         }
-        function renderRecords(records, total, isLoggedIn) {
-            const html = records.map((r, displayIdx) => {
-                const realIdx = total - 1 - displayIdx;
-                return `
-                <div class="record-item" id="record-${realIdx}">
-                    ${isLoggedIn ? `<input type="checkbox" class="record-checkbox" data-index="${realIdx}" onchange="toggleSelect(${realIdx})">` : ''}
-                    <div class="record-content">
-                        <div class="record-header">
-                            <img class="record-avatar" src="${getAvatarUrl(r.user_id)}" onerror="this.style.display='none'">
-                            <div>
-                                <div class="record-user">${r.user_name}</div>
-                                <div style="font-size: 11px; color: var(--md-outline);">${getGroupName(r)}</div>
-                            </div>
-                        </div>
-                        <div class="record-msg">${r.message}</div>
-                        <div class="record-reason">${r.reason}</div>
-                        <div class="record-time">${new Date(r.time).toLocaleString('zh-CN')}</div>
+        function renderRecords(records, total) {
+            const logged = !!window.adminToken;
+            document.getElementById('records').innerHTML = records.length ? records.map((r,i) => `
+                <div class="ios-row" id="record-${total-1-i}">
+                    ${logged ? `<input type="checkbox" class="record-checkbox" data-index="${total-1-i}" onchange="toggleSelect(${total-1-i})">` : ''}
+                    <img class="record-avatar" src="https://q.qlogo.cn/headimg_dl?dst_uin=${r.user_id}&spec=640" onerror="this.style.display='none'">
+                    <div class="ios-row-content">
+                        <div class="ios-row-title">${r.user_name}</div>
+                        <div class="ios-row-subtitle">${getGroupName(r)} · ${new Date(r.time).toLocaleString('zh-CN',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
+                        <div style="font-size:15px;color:var(--ios-label);margin-top:6px;word-break:break-all;">${r.message}</div>
+                        <div style="font-size:13px;color:var(--ios-orange);margin-top:4px;">${r.reason}</div>
                     </div>
-                    ${isLoggedIn ? `<button class="delete-btn" onclick="deleteSingle(${realIdx})">删除</button>` : ''}
+                    ${logged ? `<button class="delete-text-btn" onclick="deleteSingle(${total-1-i})">删除</button>` : ''}
                 </div>
-            `}).join('');
-            document.getElementById('records').innerHTML = html || '<div class="loading">暂无记录</div>';
+            `).join('') : '<div class="loading">暂无记录</div>';
         }
         function updateRecordGroupSelect() {
-            const records = window.allRecords || [];
-            const groupMap = {};
-            records.forEach(r => {
-                if (!groupMap[r.group_id]) {
-                    groupMap[r.group_id] = getGroupName(r);
-                }
-            });
-            const select = document.getElementById('recordGroupSelect');
-            const currentVal = select.value;
-            select.innerHTML = '<option value="">选择群聊</option>';
-            Object.entries(groupMap).forEach(([gid, gname]) => {
-                const option = document.createElement('option');
-                option.value = gid;
-                option.textContent = gname;
-                if (gid === currentVal) option.selected = true;
-                select.appendChild(option);
-            });
+            const map = {};
+            (window.allRecords||[]).forEach(r => { if(!map[r.group_id]) map[r.group_id] = getGroupName(r); });
+            const sel = document.getElementById('recordGroupSelect');
+            sel.innerHTML = '<option value="">选择群聊</option>';
+            Object.entries(map).forEach(([id,name]) => { sel.innerHTML += `<option value="${id}">${name}</option>`; });
         }
         async function loadRecords() {
-            document.getElementById('records').innerHTML = '<div class="loading">加载中...</div>';
             try {
-                const res = await fetch('/records');
-                const data = await res.json();
-                const records = data.data || [];
-                // 更新群名：用新记录的群名覆盖旧记录
-                const groupNameMap = {};
-                records.forEach(r => {
-                    if (r.group_name && r.group_name.trim()) {
-                        groupNameMap[r.group_id] = r.group_name;
-                    }
-                });
-                records.forEach(r => {
-                    if ((!r.group_name || !r.group_name.trim()) && groupNameMap[r.group_id]) {
-                        r.group_name = groupNameMap[r.group_id];
-                    }
-                });
-                window.records = records;
-                window.allRecords = records;
+                const {data} = await (await fetch('/records')).json();
+                const nameMap = {};
+                (data||[]).forEach(r => { if(r.group_name && r.group_name.trim()) nameMap[r.group_id] = r.group_name.trim(); });
+                (data||[]).forEach(r => { if(!r.group_name && nameMap[r.group_id]) r.group_name = nameMap[r.group_id]; });
+                window.allRecords = data || [];
                 window.selectedIndices = new Set();
-                document.getElementById('total').textContent = records.length;
-                const users = new Set(records.map(r => r.user_id));
-                const groups = new Set(records.map(r => r.group_id));
-                document.getElementById('users').textContent = users.size;
-                document.getElementById('groups').textContent = groups.size;
-                updateRecordGroupSelect();
-                filterRecords();
-                updateDeleteBtn();
-                updateGroupSelect();
-                updateRanking('global');
-            } catch(e) {
-                document.getElementById('records').innerHTML = '<div class="loading">加载失败</div>';
-            }
+                document.getElementById('total').textContent = data.length;
+                document.getElementById('users').textContent = new Set(data.map(r=>r.user_id)).size;
+                document.getElementById('groups').textContent = new Set(data.map(r=>r.group_id)).size;
+                updateRecordGroupSelect(); updateGroupSelect(); filterRecords(); updateDeleteBtn(); updateRanking('global');
+            } catch(e) { document.getElementById('records').innerHTML = '<div class="loading">加载失败</div>'; }
         }
-        function toggleSelect(idx) {
-            if (window.selectedIndices.has(idx)) {
-                window.selectedIndices.delete(idx);
-            } else {
-                window.selectedIndices.add(idx);
-            }
-            updateDeleteBtn();
-        }
-        function selectAll() {
-            document.querySelectorAll('.record-checkbox').forEach(cb => {
-                cb.checked = true;
-                window.selectedIndices.add(parseInt(cb.dataset.index));
-            });
-            updateDeleteBtn();
-        }
-        function selectNone() {
-            document.querySelectorAll('.record-checkbox').forEach(cb => {
-                cb.checked = false;
-            });
-            window.selectedIndices.clear();
-            updateDeleteBtn();
-        }
-        function updateDeleteBtn() {
-            const count = window.selectedIndices ? window.selectedIndices.size : 0;
-            document.getElementById('selectedCount').textContent = count;
-            document.getElementById('deleteSelectedBtn').style.display = count > 0 ? 'inline-block' : 'none';
-        }
-        async function deleteSingle(idx) {
-            if (!window.adminToken) {
-                showToast('请先登录', 'error');
-                return;
-            }
-            if (!confirm('确定要删除这条记录吗？')) {
-                return;
-            }
-            await doDelete([idx]);
-        }
-        async function deleteSelected() {
-            if (!window.adminToken) {
-                showToast('请先登录', 'error');
-                return;
-            }
-            if (window.selectedIndices.size === 0) {
-                showToast('请先选择要删除的记录', 'error');
-                return;
-            }
-            if (!confirm(`确定要删除选中的 ${window.selectedIndices.size} 条记录吗？`)) {
-                return;
-            }
-            await doDelete(Array.from(window.selectedIndices));
-        }
-        async function doDelete(indices) {
-            try {
-                const res = await fetch('/delete', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ token: window.adminToken, indices })
-                });
-                const data = await res.json();
-                if (data.code === 0) {
-                    showToast(data.msg, 'success');
-                    loadRecords();
-                } else {
-                    showToast(data.msg, 'error');
-                    if (data.msg.includes('登录')) {
-                        logout();
-                    }
-                }
-            } catch(e) {
-                showToast('操作失败', 'error');
-            }
-        }
-        let currentTab = 'global';
-        function switchTab(tab) {
-            currentTab = tab;
-            if (tab === 'global') {
-                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                event.target.classList.add('active');
-                document.getElementById('groupSelect').value = '';
-            }
-            updateRanking(tab);
-        }
-        function maskQQ(qq) {
-            const s = String(qq);
-            if (s.length <= 4) return s;
-            if (s.length <= 7) return s.slice(0, 2) + '***' + s.slice(-1);
-            return s.slice(0, 3) + '***' + s.slice(-3);
-        }
-        function getAvatarUrl(qq) {
-            return `https://q.qlogo.cn/headimg_dl?dst_uin=${qq}&spec=640`;
-        }
+        function toggleSelect(i) { window.selectedIndices.has(i) ? window.selectedIndices.delete(i) : window.selectedIndices.add(i); updateDeleteBtn(); }
+        function selectAll() { document.querySelectorAll('.record-checkbox').forEach(c=>{c.checked=true;window.selectedIndices.add(+c.dataset.index)}); updateDeleteBtn(); }
+        function selectNone() { document.querySelectorAll('.record-checkbox').forEach(c=>c.checked=false); window.selectedIndices.clear(); updateDeleteBtn(); }
+        function updateDeleteBtn() { const n=window.selectedIndices?.size||0; document.getElementById('selectedCount').textContent=n; document.getElementById('deleteSelectedBtn').style.display=n?'inline-block':'none'; }
+        async function deleteSingle(i) { if(!window.adminToken) return showToast('请先登录','error'); if(!confirm('确定删除？')) return; await doDelete([i]); }
+        async function deleteSelected() { if(!window.adminToken) return showToast('请先登录','error'); if(!window.selectedIndices.size) return showToast('请选择','error'); if(!confirm('删除'+window.selectedIndices.size+'条？')) return; await doDelete([...window.selectedIndices]); }
+        async function doDelete(idx) { try{const{code,msg}=await(await fetch('/delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:window.adminToken,indices:idx})})).json(); if(!code){showToast(msg,'success');loadRecords()}else{showToast(msg,'error');if(msg.includes('登录'))logout()}}catch(e){showToast('失败','error')} }
+        function switchTab(t) { if(t==='global'){document.getElementById('groupSelect').value=''} updateRanking(t); }
+        function maskQQ(q) { const s=String(q); return s.length<=4?s:s.slice(0,3)+'***'+s.slice(-3); }
         function updateRanking(type) {
-            const records = window.records || [];
-            let filtered = records;
-            let selectedGroupId = '';
-            if (type === 'group') {
-                selectedGroupId = document.getElementById('groupSelect').value;
-                if (selectedGroupId) {
-                    filtered = records.filter(r => r.group_id === selectedGroupId);
-                } else {
-                    filtered = [];
-                }
-            }
-            const userStats = {};
-            filtered.forEach(r => {
-                const key = r.user_id;  // 使用QQ号作为唯一标识
-                const groupName = getGroupName(r);
-                if (!userStats[key]) {
-                    userStats[key] = { qq: r.user_id, name: r.user_name, count: 0, groups: {} };
-                }
-                userStats[key].count++;
-                if (!userStats[key].groups[r.group_id]) {
-                    userStats[key].groups[r.group_id] = { name: groupName, count: 0 };
-                }
-                userStats[key].groups[r.group_id].count++;
-            });
-            const sorted = Object.entries(userStats).sort((a, b) => b[1].count - a[1].count);
-            if (sorted.length === 0) {
-                document.getElementById('ranking').innerHTML = '<div class="loading">暂无数据</div>';
-                return;
-            }
-            const html = sorted.slice(0, 10).map(([uid, info], index) => {
-                const rankClass = index < 3 ? `ranking-${index + 1}` : 'ranking-other';
-                const groupCount = Object.keys(info.groups).length;
-                const groupInfo = groupCount > 1 ? `${groupCount}个群` : Object.values(info.groups)[0]?.name || '1个群';
-                return `
-                    <div class="ranking-item">
-                        <div class="ranking-num ${rankClass}">${index + 1}</div>
-                        <img class="ranking-avatar" src="${getAvatarUrl(info.qq)}" onerror="this.style.display='none'">
-                        <div class="ranking-info">
-                            <div class="ranking-name">${info.name}</div>
-                            <div class="ranking-qq">QQ: ${maskQQ(info.qq)}</div>
-                            <div class="ranking-group">涉及 ${groupInfo}</div>
-                        </div>
-                        <div class="ranking-count">${info.count}<span>次</span></div>
+            let recs = window.allRecords||[];
+            if(type==='group'){const g=document.getElementById('groupSelect').value; recs=g?recs.filter(r=>r.group_id===g):[]}
+            const stats={};
+            recs.forEach(r=>{if(!stats[r.user_id]) stats[r.user_id]={qq:r.user_id,name:r.user_name,count:0,groups:{}}; stats[r.user_id].count++; stats[r.user_id].groups[r.group_id]=getGroupName(r)});
+            const sorted=Object.entries(stats).sort((a,b)=>b[1].count-a[1].count).slice(0,10);
+            document.getElementById('ranking').innerHTML=sorted.length?sorted.map(([uid,u],i)=>`
+                <div class="ios-row">
+                    <div class="ranking-badge rank-${i<3?i+1:'other'}">${i+1}</div>
+                    <img class="ranking-avatar" src="https://q.qlogo.cn/headimg_dl?dst_uin=${u.qq}&spec=640" onerror="this.style.display='none'">
+                    <div class="ios-row-content">
+                        <div class="ios-row-title">${u.name}</div>
+                        <div class="ios-row-subtitle">${maskQQ(u.qq)} · ${Object.keys(u.groups).length}个群</div>
                     </div>
-                `;
-            }).join('');
-            document.getElementById('ranking').innerHTML = html;
+                    <div class="ranking-count">${u.count}<span>次</span></div>
+                </div>
+            `).join(''):'<div class="loading">暂无数据</div>';
         }
         function updateGroupSelect() {
-            const records = window.records || [];
-            const groupMap = {};
-            records.forEach(r => {
-                if (!groupMap[r.group_id]) {
-                    groupMap[r.group_id] = getGroupName(r);
-                }
-            });
-            const select = document.getElementById('groupSelect');
-            select.innerHTML = '<option value="">选择群聊</option>';
-            Object.entries(groupMap).forEach(([gid, gname]) => {
-                const option = document.createElement('option');
-                option.value = gid;
-                option.textContent = gname;
-                select.appendChild(option);
-            });
+            const map={}; (window.allRecords||[]).forEach(r=>{if(!map[r.group_id])map[r.group_id]=getGroupName(r)});
+            const s=document.getElementById('groupSelect'); s.innerHTML='<option value="">选择群聊</option>';
+            Object.entries(map).forEach(([id,n])=>{s.innerHTML+=`<option value="${id}">${n}</option>`});
         }
-        let adminToken = localStorage.getItem('adminToken') || '';
-        window.adminToken = adminToken;
+        let adminToken=localStorage.getItem('adminToken')||'';
+        window.adminToken=adminToken;
         function checkLogin() {
-            adminToken = localStorage.getItem('adminToken') || '';
-            window.adminToken = adminToken;
-            if (adminToken) {
-                document.getElementById('loginSection').style.display = 'none';
-                document.getElementById('adminSection').style.display = 'block';
-                document.getElementById('adminBtns').style.display = 'inline';
-            } else {
-                document.getElementById('loginSection').style.display = 'block';
-                document.getElementById('adminSection').style.display = 'none';
-                document.getElementById('adminBtns').style.display = 'none';
-            }
+            adminToken=localStorage.getItem('adminToken')||''; window.adminToken=adminToken;
+            document.getElementById('loginSection').style.display=adminToken?'none':'block';
+            document.getElementById('adminSection').style.display=adminToken?'block':'none';
+            document.getElementById('adminBtns').style.display=adminToken?'inline':'none';
             loadRecords();
         }
         async function login() {
-            const password = document.getElementById('loginPassword').value;
-            if (!password) {
-                showToast('请输入管理密码', 'error');
-                return;
-            }
-            try {
-                const res = await fetch('/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ password })
-                });
-                const data = await res.json();
-                if (data.code === 0) {
-                    adminToken = data.token;
-                    localStorage.setItem('adminToken', adminToken);
-                    checkLogin();
-                    showToast('登录成功', 'success');
-                    document.getElementById('loginPassword').value = '';
-                } else {
-                    showToast(data.msg, 'error');
-                }
-            } catch(e) {
-                showToast('登录失败', 'error');
-            }
+            const pw=document.getElementById('loginPassword').value;
+            if(!pw) return showToast('请输入密码','error');
+            try{const{code,token,msg}=await(await fetch('/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pw})})).json();
+            if(!code){adminToken=token;localStorage.setItem('adminToken',token);checkLogin();showToast('登录成功','success');document.getElementById('loginPassword').value=''}
+            else showToast(msg,'error')}catch(e){showToast('失败','error')}
         }
-        function logout() {
-            adminToken = '';
-            localStorage.removeItem('adminToken');
-            checkLogin();
-            showToast('已退出登录', 'success');
-        }
-        function showToast(msg, type) {
-            const toast = document.createElement('div');
-            toast.className = 'toast toast-' + type;
-            toast.textContent = msg;
-            document.body.appendChild(toast);
-            setTimeout(() => toast.remove(), 3000);
-        }
-        async function clearRecords() {
-            if (!adminToken) {
-                showToast('请先登录', 'error');
-                return;
-            }
-            if (!confirm('确定要清空所有记录吗？此操作不可恢复！')) {
-                return;
-            }
-            try {
-                const res = await fetch('/clear', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ token: adminToken })
-                });
-                const data = await res.json();
-                if (data.code === 0) {
-                    showToast(data.msg, 'success');
-                    loadRecords();
-                } else {
-                    showToast(data.msg, 'error');
-                    if (data.msg.includes('登录')) {
-                        logout();
-                    }
-                }
-            } catch(e) {
-                showToast('操作失败', 'error');
-            }
-        }
+        function logout(){adminToken='';localStorage.removeItem('adminToken');checkLogin();showToast('已退出','success')}
+        function showToast(msg,type){const t=document.createElement('div');t.className='toast toast-'+type;t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),2000)}
+        async function clearRecords(){if(!confirm('清空全部？'))return;try{const{code,msg}=await(await fetch('/clear',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:adminToken})})).json();if(!code){showToast(msg,'success');loadRecords()}else{showToast(msg,'error');if(msg.includes('登录'))logout()}}catch(e){showToast('失败','error')}}
         checkLogin();
     </script>
 </body>
