@@ -30,6 +30,8 @@ class ProfanityMonitor(Star):
         self.host = config.get("http_host", "0.0.0.0")
         self.port = config.get("http_port", 10050)
         self.admin_password = config.get("admin_password", "m1234")
+        self.login_attempts = {}
+        self.login_tokens = {}
 
     async def initialize(self):
         os.makedirs(self.data_dir, exist_ok=True)
@@ -62,6 +64,7 @@ class ProfanityMonitor(Star):
         app.router.add_get("/", self._handle_index)
         app.router.add_get("/records", self._handle_get_records)
         app.router.add_get("/stats", self._handle_get_stats)
+        app.router.add_post("/login", self._handle_login)
         app.router.add_post("/clear", self._handle_clear_records)
         self.http_runner = web.AppRunner(app)
         await self.http_runner.setup()
@@ -258,12 +261,63 @@ class ProfanityMonitor(Star):
             }
         )
 
-    async def _handle_clear_records(self, request: web.Request) -> web.Response:
+    async def _handle_login(self, request: web.Request) -> web.Response:
         try:
             data = await request.json()
             password = data.get("password", "")
+            client_ip = request.remote
+            # 检查是否被锁定
+            if client_ip in self.login_attempts:
+                attempts, lock_time = self.login_attempts[client_ip]
+                if attempts >= 5:
+                    import time
+
+                    if time.time() - lock_time < 1800:  # 锁定30分钟
+                        return web.json_response(
+                            {"code": 1, "msg": "登录失败次数过多，请30分钟后重试"}
+                        )
+                    else:
+                        del self.login_attempts[client_ip]
+            # 验证密码
             if password != self.admin_password:
+                # 记录失败次数
+                import time
+
+                if client_ip not in self.login_attempts:
+                    self.login_attempts[client_ip] = [1, time.time()]
+                else:
+                    self.login_attempts[client_ip][0] += 1
+                    self.login_attempts[client_ip][1] = time.time()
                 return web.json_response({"code": 1, "msg": "密码错误"})
+            # 生成token
+            import uuid
+            import time
+
+            token = str(uuid.uuid4())
+            self.login_tokens[token] = {"ip": client_ip, "time": time.time()}
+            # 清除失败记录
+            if client_ip in self.login_attempts:
+                del self.login_attempts[client_ip]
+            return web.json_response({"code": 0, "token": token})
+        except Exception as e:
+            return web.json_response({"code": 1, "msg": str(e)})
+
+    async def _handle_clear_records(self, request: web.Request) -> web.Response:
+        try:
+            data = await request.json()
+            token = data.get("token", "")
+            # 验证token
+            import time
+
+            if token not in self.login_tokens:
+                return web.json_response({"code": 1, "msg": "请先登录"})
+            token_data = self.login_tokens[token]
+            # token有效期30分钟
+            if time.time() - token_data["time"] > 1800:
+                del self.login_tokens[token]
+                return web.json_response({"code": 1, "msg": "登录已过期，请重新登录"})
+            # 刷新token时间
+            self.login_tokens[token]["time"] = time.time()
             group_id = data.get("group_id")
             if group_id:
                 self.records = [
