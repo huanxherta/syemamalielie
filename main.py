@@ -24,6 +24,7 @@ class ProfanityMonitor(Star):
         self.http_runner = None
         self.http_site = None
         self.provider_id = config.get("provider_id", "")
+        self.custom_prompt = config.get("custom_prompt", "")
         self.enable_groups = config.get("enable_groups", [])
         self.ignore_groups = config.get("ignore_groups", [])
         self.enable_http = config.get("enable_http_api", False)
@@ -713,18 +714,21 @@ class ProfanityMonitor(Star):
         if not message_str:
             return
         try:
-            prompt = (
-                "请判断以下消息是否包含脏话、辱骂、侮辱性词汇，包括但不限于：\n"
-                "1. 直接的脏话粗口 2. 谐音替代（如tm、卧槽、尼玛等）\n"
-                "3. 拼音首字母缩写（如nmsl、wc等）4. 黑话暗语\n"
-                "5. 网络流行梗中的侮辱性表达 6. 符号替代（如*、#等）\n\n"
-                "注意以下情况不算脏话：\n"
-                "- @某人的消息，如 '@用户名' 或 '@用户名(QQ号)'\n"
-                "- 用户昵称、群名片中的文字\n"
-                "- 正常的聊天内容\n\n"
-                '只回复一个JSON对象：{"is_profanity": true/false, "reason": "原因"}。\n'
-                f"消息内容：{message_str}"
-            )
+            if self.custom_prompt:
+                prompt = self.custom_prompt.replace("{message}", message_str)
+            else:
+                prompt = (
+                    "请判断以下消息是否包含脏话、辱骂、侮辱性词汇，包括但不限于：\n"
+                    "1. 直接的脏话粗口 2. 谐音替代（如tm、卧槽、尼玛等）\n"
+                    "3. 拼音首字母缩写（如nmsl、wc等）4. 黑话暗语\n"
+                    "5. 网络流行梗中的侮辱性表达 6. 符号替代（如*、#等）\n\n"
+                    "注意以下情况不算脏话：\n"
+                    "- @某人的消息，如 '@用户名' 或 '@用户名(QQ号)'\n"
+                    "- 用户昵称、群名片中的文字\n"
+                    "- 正常的聊天内容\n\n"
+                    '只回复一个JSON对象：{"is_profanity": true/false, "reason": "原因"}。\n'
+                    f"消息内容：{message_str}"
+                )
             if self.provider_id:
                 provider = self.context.get_provider_by_id(self.provider_id)
             else:

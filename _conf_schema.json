@@ -5,6 +5,12 @@
     "hint": "选择用于分析脏话的LLM模型",
     "_special": "select_provider"
   },
+  "custom_prompt": {
+    "description": "自定义分析Prompt",
+    "type": "text",
+    "default": "",
+    "hint": "留空使用默认Prompt，自定义时需包含 {message} 占位符"
+  },
   "enable_groups": {
     "description": "启用监控的群聊ID列表",
     "type": "list",
