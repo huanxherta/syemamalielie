@@ -356,12 +356,13 @@ class ProfanityMonitor(Star):
             const userStats = {};
             filtered.forEach(r => {
                 const key = r.user_id;  // 使用QQ号作为唯一标识
+                const groupName = r.group_name && r.group_name.trim() ? r.group_name : '未知群聊';
                 if (!userStats[key]) {
                     userStats[key] = { qq: r.user_id, name: r.user_name, count: 0, groups: {} };
                 }
                 userStats[key].count++;
                 if (!userStats[key].groups[r.group_id]) {
-                    userStats[key].groups[r.group_id] = { name: r.group_name || `群${r.group_id}`, count: 0 };
+                    userStats[key].groups[r.group_id] = { name: groupName, count: 0 };
                 }
                 userStats[key].groups[r.group_id].count++;
             });
@@ -394,7 +395,8 @@ class ProfanityMonitor(Star):
             const groupMap = {};
             records.forEach(r => {
                 if (!groupMap[r.group_id]) {
-                    groupMap[r.group_id] = r.group_name || `群${r.group_id}`;
+                    const groupName = r.group_name && r.group_name.trim() ? r.group_name : '未知群聊';
+                    groupMap[r.group_id] = groupName;
                 }
             });
             const select = document.getElementById('groupSelect');
