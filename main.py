@@ -3,6 +3,7 @@ import os
 from datetime import datetime
 from aiohttp import web
 from astrbot.api.event import filter, AstrMessageEvent, MessageEventResult
+from astrbot.api.event.filter import EventMessageType
 from astrbot.api.star import Context, Star, register
 from astrbot.api import logger
 
@@ -69,10 +70,8 @@ class ProfanityMonitor(Star):
             stats[uid]["count"] += 1
         return web.json_response({"code": 0, "data": stats})
 
-    @filter.on_message()
+    @filter.event_message_type(EventMessageType.GROUP_MESSAGE)
     async def on_group_message(self, event: AstrMessageEvent):
-        if not event.is_group():
-            return
         message_str = event.message_str.strip()
         if not message_str:
             return
