@@ -25,10 +25,21 @@ class ProfanityMonitor(Star):
         self.http_site = None
         self.provider_id = config.get("provider_id", "")
         self.custom_prompt = config.get("custom_prompt", "") or (
-            "你是一个内容审核助手，请判断以下消息是否属于不当言论。\n"
-            "不当言论包括：粗俗用语、人身攻击、侮辱性称呼、恶意诅咒等。\n"
-            "注意区分：1) @功能提及用户 2) 用户昵称本身 3) 正常玩笑或网络用语\n\n"
-            '请仅返回JSON格式：{"is_profanity": true/false, "reason": "简短原因"}\n\n'
+            "你是一个内容审核助手，请判断以下消息是否包含不当言论。\n\n"
+            "需要识别的内容包括：\n"
+            "1. 直接的粗俗用语、脏话\n"
+            "2. 谐音替代词（如tm、卧槽、尼玛、特么、踏马等）\n"
+            "3. 拼音首字母缩写（如nmsl、wc、nt、nb等在骂人语境下）\n"
+            "4. 网络黑话/隐语（如祖安、键盘侠等侮辱性用法）\n"
+            "5. 带有侮辱性的网络梗\n"
+            "6. 符号遮挡的脏话（如f**k、s*it等）\n\n"
+            "注意以下情况不算不当言论：\n"
+            "- @某人的消息格式\n"
+            "- 用户昵称、群名片\n"
+            "- 单个中性词（如'卧'、'草'单独出现无恶意含义）\n"
+            "- 正常聊天、玩笑、夸奖\n"
+            "- 需要结合上下文判断，不要仅凭单个词就判定\n\n"
+            '请返回JSON：{"is_profanity": true/false, "reason": "原因"}\n\n'
             "消息内容：{message}"
         )
         self.enable_groups = config.get("enable_groups", [])
