@@ -123,6 +123,21 @@ class ProfanityMonitor(Star):
         .toast-success { background: #27ae60; }
         .toast-error { background: #e74c3c; }
         @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .ranking-item { display: flex; align-items: center; padding: 12px; border-bottom: 1px solid #eee; }
+        .ranking-item:last-child { border-bottom: none; }
+        .ranking-num { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px; }
+        .ranking-1 { background: #ffd700; color: #333; }
+        .ranking-2 { background: #c0c0c0; color: #333; }
+        .ranking-3 { background: #cd7f32; color: white; }
+        .ranking-other { background: #f0f0f0; color: #666; }
+        .ranking-info { flex: 1; }
+        .ranking-name { font-weight: bold; color: #333; }
+        .ranking-group { font-size: 12px; color: #999; margin-top: 2px; }
+        .ranking-count { font-size: 20px; font-weight: bold; color: #e74c3c; }
+        .ranking-count span { font-size: 12px; color: #999; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 15px; }
+        .tab { padding: 8px 16px; border-radius: 6px; cursor: pointer; background: #f0f0f0; color: #666; transition: all 0.2s; }
+        .tab.active { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
     </style>
 </head>
 <body>
@@ -144,6 +159,14 @@ class ProfanityMonitor(Star):
             </div>
         </div>
         <div class="card">
+            <h2 style="margin-bottom: 15px; color: #333;">脏话排行榜</h2>
+            <div class="tabs">
+                <div class="tab active" onclick="switchTab('global')">总榜</div>
+                <div class="tab" onclick="switchTab('group')">本群</div>
+            </div>
+            <div id="ranking"><div class="loading">加载数据后显示排行榜</div></div>
+        </div>
+        <div class="card">
             <h2 style="margin-bottom: 15px; color: #333;">最近记录</h2>
             <div class="btn-group">
                 <button class="btn" onclick="loadRecords()">刷新数据</button>
@@ -160,6 +183,7 @@ class ProfanityMonitor(Star):
                 const res = await fetch('/records');
                 const data = await res.json();
                 const records = data.data || [];
+                window.records = records;
                 document.getElementById('total').textContent = records.length;
                 const users = new Set(records.map(r => r.user_id));
                 const groups = new Set(records.map(r => r.group_id));
@@ -174,9 +198,59 @@ class ProfanityMonitor(Star):
                     </div>
                 `).join('');
                 document.getElementById('records').innerHTML = html || '<div class="loading">暂无记录</div>';
+                updateRanking('global');
             } catch(e) {
                 document.getElementById('records').innerHTML = '<div class="loading">加载失败</div>';
             }
+        }
+        let currentTab = 'global';
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            updateRanking(tab);
+        }
+        function updateRanking(type) {
+            const records = window.records || [];
+            let filtered = records;
+            if (type === 'group') {
+                const lastRecord = records[records.length - 1];
+                if (lastRecord) {
+                    filtered = records.filter(r => r.group_id === lastRecord.group_id);
+                }
+            }
+            const userStats = {};
+            filtered.forEach(r => {
+                const key = r.user_id;
+                if (!userStats[key]) {
+                    userStats[key] = { name: r.user_name, count: 0, groups: {} };
+                }
+                userStats[key].count++;
+                if (!userStats[key].groups[r.group_id]) {
+                    userStats[key].groups[r.group_id] = 0;
+                }
+                userStats[key].groups[r.group_id]++;
+            });
+            const sorted = Object.entries(userStats).sort((a, b) => b[1].count - a[1].count);
+            if (sorted.length === 0) {
+                document.getElementById('ranking').innerHTML = '<div class="loading">暂无数据</div>';
+                return;
+            }
+            const html = sorted.slice(0, 10).map(([uid, info], index) => {
+                const rankClass = index < 3 ? `ranking-${index + 1}` : 'ranking-other';
+                const groupInfo = Object.keys(info.groups).length > 1 ? `${Object.keys(info.groups).length}个群` : '1个群';
+                return `
+                    <div class="ranking-item">
+                        <div class="ranking-num ${rankClass}">${index + 1}</div>
+                        <div class="ranking-info">
+                            <div class="ranking-name">${info.name}</div>
+                            <div class="ranking-group">涉及 ${groupInfo}</div>
+                        </div>
+                        <div class="ranking-count">${info.count}<span>次</span></div>
+                    </div>
+                `;
+            }).join('');
+            document.getElementById('ranking').innerHTML = html;
         }
         function showToast(msg, type) {
             const toast = document.createElement('div');
