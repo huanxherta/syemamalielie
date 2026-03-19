@@ -361,9 +361,9 @@ class ProfanityMonitor(Star):
                 }
                 userStats[key].count++;
                 if (!userStats[key].groups[r.group_id]) {
-                    userStats[key].groups[r.group_id] = 0;
+                    userStats[key].groups[r.group_id] = { name: r.group_name || `群${r.group_id}`, count: 0 };
                 }
-                userStats[key].groups[r.group_id]++;
+                userStats[key].groups[r.group_id].count++;
             });
             const sorted = Object.entries(userStats).sort((a, b) => b[1].count - a[1].count);
             if (sorted.length === 0) {
@@ -372,7 +372,8 @@ class ProfanityMonitor(Star):
             }
             const html = sorted.slice(0, 10).map(([uid, info], index) => {
                 const rankClass = index < 3 ? `ranking-${index + 1}` : 'ranking-other';
-                const groupInfo = Object.keys(info.groups).length > 1 ? `${Object.keys(info.groups).length}个群` : '1个群';
+                const groupCount = Object.keys(info.groups).length;
+                const groupInfo = groupCount > 1 ? `${groupCount}个群` : Object.values(info.groups)[0]?.name || '1个群';
                 return `
                     <div class="ranking-item">
                         <div class="ranking-num ${rankClass}">${index + 1}</div>
@@ -390,13 +391,18 @@ class ProfanityMonitor(Star):
         }
         function updateGroupSelect() {
             const records = window.records || [];
-            const groups = [...new Set(records.map(r => r.group_id))];
+            const groupMap = {};
+            records.forEach(r => {
+                if (!groupMap[r.group_id]) {
+                    groupMap[r.group_id] = r.group_name || `群${r.group_id}`;
+                }
+            });
             const select = document.getElementById('groupSelect');
             select.innerHTML = '<option value="">选择群聊</option>';
-            groups.forEach(gid => {
+            Object.entries(groupMap).forEach(([gid, gname]) => {
                 const option = document.createElement('option');
                 option.value = gid;
-                option.textContent = `群 ${gid}`;
+                option.textContent = gname;
                 select.appendChild(option);
             });
         }
@@ -674,18 +680,24 @@ class ProfanityMonitor(Star):
             if result.get("is_profanity"):
                 user_id = event.get_sender_id()
                 user_name = event.get_sender_name()
-                # 尝试获取真实昵称
+                group_name = ""
+                # 尝试获取真实昵称和群名
                 try:
                     client = event.bot
                     if hasattr(client, "get_stranger_info"):
                         info = await client.get_stranger_info(user_id=int(user_id))
                         if info and "nickname" in info:
                             user_name = info["nickname"]
+                    if hasattr(client, "get_group_info"):
+                        group_info = await client.get_group_info(group_id=int(group_id))
+                        if group_info and "group_name" in group_info:
+                            group_name = group_info["group_name"]
                 except:
                     pass
                 record = {
                     "time": datetime.now().isoformat(),
                     "group_id": group_id,
+                    "group_name": group_name,
                     "user_id": user_id,
                     "user_name": user_name,
                     "message": message_str,
