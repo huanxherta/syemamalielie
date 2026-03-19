@@ -15,9 +15,9 @@ from astrbot.api import logger, AstrBotConfig
     "1.0.0",
 )
 class ProfanityMonitor(Star):
-    def __init__(self, context: Context, config: AstrBotConfig = None):
+    def __init__(self, context: Context):
         super().__init__(context)
-        self.config = config or {}
+        self.config = context.config if hasattr(context, "config") else {}
         self.data_dir = os.path.join("data", "profanity_monitor")
         self.data_file = os.path.join(self.data_dir, "records.json")
         self.records = []
