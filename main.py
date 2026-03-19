@@ -96,116 +96,115 @@ class ProfanityMonitor(Star):
         html = """<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>群聊脏话监控</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        :root {
-            --c-bg: #F2F2F7; --c-card: rgba(255,255,255,0.82); --c-blue: #007AFF; --c-red: #FF3B30;
-            --c-green: #34C759; --c-orange: #FF9500; --c-gray: #8E8E93; --c-gray2: #AEAEB2;
-            --c-gray5: #E5E5EA; --c-gray6: #F2F2F7; --c-label: #000000; --c-label2: #3C3C43;
-            --c-sep: rgba(60,60,67,0.12);
-        }
-        .dark {
-            --c-bg: #000000; --c-card: rgba(44,44,46,0.82); --c-blue: #0A84FF; --c-red: #FF453A;
-            --c-green: #30D158; --c-orange: #FF9F0A; --c-gray: #8E8E93; --c-gray2: #636366;
-            --c-gray5: #38383A; --c-gray6: #1C1C1E; --c-label: #FFFFFF; --c-label2: #EBEBF5;
-            --c-sep: rgba(84,84,88,0.65);
-        }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'PingFang SC', sans-serif; background: var(--c-bg); min-height: 100vh; padding: 20px 16px; -webkit-font-smoothing: antialiased; transition: all 0.3s; }
-        .container { max-width: 428px; margin: 0 auto; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .header h1 { font-size: 34px; font-weight: 700; color: var(--c-label); }
-        .theme-btn { width: 36px; height: 36px; border-radius: 50%; background: var(--c-card); border: none; font-size: 18px; cursor: pointer; backdrop-filter: blur(20px); }
-        .section { background: var(--c-card); backdrop-filter: blur(40px); border-radius: 13px; overflow: hidden; margin-bottom: 16px; }
-        .section-h { padding: 12px 16px 8px; font-size: 13px; color: var(--c-gray); text-transform: uppercase; }
-        .row { display: flex; align-items: center; padding: 12px 16px; position: relative; }
-        .row:not(:last-child)::after { content: ''; position: absolute; bottom: 0; left: 54px; right: 16px; height: 0.5px; background: var(--c-sep); }
-        .row-c { flex: 1; }
-        .row-t { font-size: 17px; color: var(--c-label); }
-        .row-s { font-size: 14px; color: var(--c-gray); margin-top: 2px; }
-        .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--c-sep); }
-        .stat { background: var(--c-card); padding: 16px 8px; text-align: center; }
-        .stat-n { font-size: 28px; font-weight: 600; color: var(--c-blue); }
-        .stat-l { font-size: 12px; color: var(--c-gray); margin-top: 4px; }
-        .btn { display: inline-block; padding: 8px 16px; border-radius: 8px; font-size: 15px; border: none; cursor: pointer; transition: all 0.15s; }
-        .btn:active { transform: scale(0.97); opacity: 0.7; }
-        .btn-p { background: var(--c-blue); color: white; }
-        .btn-r { background: var(--c-red); color: white; }
-        .btn-g { background: var(--c-gray5); color: var(--c-label); }
-        .input { width: 100%; padding: 10px 12px; border: none; border-radius: 8px; background: var(--c-gray6); font-size: 17px; outline: none; color: var(--c-label); }
-        .input::placeholder { color: var(--c-gray2); }
-        .search { position: relative; margin: 0 16px 12px; }
-        .search input { padding-left: 36px; }
-        .search-i { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--c-gray); }
-        .tabs { display: flex; padding: 0 16px 12px; gap: 8px; }
-        .tab { padding: 6px 12px; border-radius: 16px; font-size: 13px; font-weight: 500; background: var(--c-gray5); color: var(--c-label2); cursor: pointer; border: none; }
-        .tab.on { background: var(--c-blue); color: white; }
-        .sel { padding: 6px 12px; border-radius: 16px; font-size: 13px; background: var(--c-gray5); color: var(--c-label2); border: none; cursor: pointer; outline: none; }
-        .av { width: 44px; height: 44px; border-radius: 50%; margin-right: 12px; object-fit: cover; }
-        .badge { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; margin-right: 12px; }
-        .r1 { background: linear-gradient(135deg, #FFD700, #FFA500); color: white; }
-        .r2 { background: linear-gradient(135deg, #C0C0C0, #A0A0A0); color: white; }
-        .r3 { background: linear-gradient(135deg, #CD7F32, #8B4513); color: white; }
-        .ro { background: var(--c-gray5); color: var(--c-gray); }
-        .cnt { font-size: 20px; font-weight: 600; color: var(--c-label); }
-        .cnt span { font-size: 12px; color: var(--c-gray); }
-        .r-av { width: 40px; height: 40px; border-radius: 50%; margin-right: 12px; flex-shrink: 0; object-fit: cover; }
-        .cb { width: 20px; height: 20px; margin-right: 12px; accent-color: var(--c-blue); flex-shrink: 0; }
-        .del { background: none; border: none; color: var(--c-red); font-size: 15px; cursor: pointer; }
-        .btns { display: flex; gap: 8px; padding: 0 16px 12px; flex-wrap: wrap; }
-        .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); padding: 12px 24px; border-radius: 12px; font-size: 15px; z-index: 1000; animation: tIn 0.3s; backdrop-filter: blur(20px); }
-        .toast-s { background: rgba(52,199,89,0.9); color: white; }
-        .toast-e { background: rgba(255,59,48,0.9); color: white; }
-        @keyframes tIn { from { transform: translate(-50%, 20px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
-        .ld { text-align: center; padding: 40px; color: var(--c-gray); }
-        .ft { text-align: center; padding: 16px; font-size: 13px; color: var(--c-gray); }
-        .ft a { color: var(--c-blue); text-decoration: none; }
-        .pw { display: flex; gap: 8px; padding: 0 16px 12px; }
-        .pw input { flex: 1; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>群聊脏话监控</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{--bg:#F2F2F7;--card:rgba(255,255,255,.82);--blue:#007AFF;--red:#FF3B30;--green:#34C759;--orange:#FF9500;--gray:#8E8E93;--gray2:#AEAEB2;--gray5:#E5E5EA;--gray6:#F2F2F7;--label:#000;--label2:#3C3C43;--sep:rgba(60,60,67,.12)}
+@media(prefers-color-scheme:dark){:root{--bg:#000;--card:rgba(44,44,46,.82);--blue:#0A84FF;--red:#FF453A;--green:#30D158;--orange:#FF9F0A;--gray5:#38383A;--gray6:#1C1C1E;--label:#fff;--label2:#EBEBF5;--sep:rgba(84,84,88,.65)}}
+body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','PingFang SC',sans-serif;background:var(--bg);min-height:100vh;padding:0 0 80px;-webkit-font-smoothing:antialiased}
+.c{max-width:428px;margin:0 auto;padding:20px 16px}
+.hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.hdr h1{font-size:34px;font-weight:700;color:var(--label)}
+.sec{background:var(--card);backdrop-filter:blur(40px);border-radius:13px;overflow:hidden;margin-bottom:16px}
+.sec-h{padding:12px 16px 8px;font-size:13px;color:var(--gray);text-transform:uppercase}
+.row{display:flex;align-items:center;padding:12px 16px;position:relative}
+.row:not(:last-child)::after{content:'';position:absolute;bottom:0;left:54px;right:16px;height:.5px;background:var(--sep)}
+.row-c{flex:1}
+.row-t{font-size:17px;color:var(--label)}
+.row-s{font-size:14px;color:var(--gray);margin-top:2px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--sep)}
+.stat{background:var(--card);padding:16px 8px;text-align:center}
+.stat-n{font-size:28px;font-weight:600;color:var(--blue)}
+.stat-l{font-size:12px;color:var(--gray);margin-top:4px}
+.btn{display:inline-block;padding:8px 16px;border-radius:8px;font-size:15px;border:none;cursor:pointer;transition:all .15s}
+.btn:active{transform:scale(.97);opacity:.7}
+.btn-p{background:var(--blue);color:#fff}
+.btn-r{background:var(--red);color:#fff}
+.btn-g{background:var(--gray5);color:var(--label)}
+.input{width:100%;padding:10px 12px;border:none;border-radius:8px;background:var(--gray6);font-size:17px;outline:none;color:var(--label)}
+.input::placeholder{color:var(--gray2)}
+.search{position:relative;margin:0 16px 12px}
+.search input{padding-left:36px}
+.search-i{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--gray)}
+.tabs{display:flex;padding:0 16px 12px;gap:8px;flex-wrap:wrap}
+.tab{padding:6px 12px;border-radius:16px;font-size:13px;font-weight:500;background:var(--gray5);color:var(--label2);cursor:pointer;border:none}
+.tab.on{background:var(--blue);color:#fff}
+.sel{padding:6px 12px;border-radius:16px;font-size:13px;background:var(--gray5);color:var(--label2);border:none;cursor:pointer;outline:none}
+.av{width:44px;height:44px;border-radius:50%;margin-right:12px;object-fit:cover}
+.badge{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;margin-right:12px}
+.r1{background:linear-gradient(135deg,#FFD700,#FFA500);color:#fff}
+.r2{background:linear-gradient(135deg,#C0C0C0,#A0A0A0);color:#fff}
+.r3{background:linear-gradient(135deg,#CD7F32,#8B4513);color:#fff}
+.ro{background:var(--gray5);color:var(--gray)}
+.cnt{font-size:20px;font-weight:600;color:var(--label)}
+.cnt span{font-size:12px;color:var(--gray)}
+.r-av{width:40px;height:40px;border-radius:50%;margin-right:12px;flex-shrink:0;object-fit:cover}
+.cb{width:20px;height:20px;margin-right:12px;accent-color:var(--blue);flex-shrink:0}
+.del{background:none;border:none;color:var(--red);font-size:15px;cursor:pointer}
+.btns{display:flex;gap:8px;padding:0 16px 12px;flex-wrap:wrap}
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);padding:12px 24px;border-radius:12px;font-size:15px;z-index:1000;animation:tIn .3s;backdrop-filter:blur(20px)}
+.toast-s{background:rgba(52,199,89,.9);color:#fff}
+.toast-e{background:rgba(255,59,48,.9);color:#fff}
+@keyframes tIn{from{transform:translate(-50%,20px);opacity:0}to{transform:translate(-50%,0);opacity:1}}
+.ld{text-align:center;padding:40px;color:var(--gray)}
+.pw{display:flex;gap:8px;padding:0 16px 12px}
+.pw input{flex:1}
+.tabbar{position:fixed;bottom:0;left:0;right:0;background:var(--card);backdrop-filter:blur(20px);border-top:.5px solid var(--sep);display:flex;justify-content:space-around;padding:8px 0 env(safe-area-inset-bottom)}
+.tabbar-i{display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;cursor:pointer;padding:4px 16px;color:var(--gray)}
+.tabbar-i.on{color:var(--blue)}
+.tabbar-ic{font-size:22px}
+.tabbar-l{font-size:10px;font-weight:500}
+.page{display:none}.page.on{display:block}
+</style>
 </head>
 <body>
-    <div class="container">
-        <div class="header"><h1>监控</h1><button class="theme-btn" onclick="toggleTheme()">&#9728;&#65039;</button></div>
-        <div class="section"><div class="stats"><div class="stat"><div class="stat-n" id="total">-</div><div class="stat-l">总记录</div></div><div class="stat"><div class="stat-n" id="users">-</div><div class="stat-l">用户</div></div><div class="stat"><div class="stat-n" id="groups">-</div><div class="stat-l">群组</div></div></div></div>
-        <div class="section"><div class="section-h">排行榜</div><div class="tabs"><button class="tab on" onclick="switchTab('global')">总榜</button><select class="sel" id="groupSelect" onchange="switchTab('group')"><option value="">选择群聊</option></select></div><div id="ranking"><div class="ld">加载中...</div></div></div>
-        <div class="section"><div class="section-h">记录</div><div class="search"><span class="search-i">&#128269;</span><input class="input" id="searchInput" placeholder="搜索..." oninput="filterRecords()"></div><div class="tabs"><button class="tab on" onclick="switchRT('all')">全部</button><select class="sel" id="recordGroupSelect" onchange="switchRT('group')"><option value="">选择群聊</option></select></div><div class="btns"><button class="btn btn-g" onclick="loadRecords()">刷新</button><span id="adminBtns" style="display:none;"><button class="btn btn-g" onclick="selectAll()">全选</button><button class="btn btn-g" onclick="selectNone()">取消</button><button class="btn btn-r" onclick="deleteSelected()" id="deleteSelectedBtn" style="display:none;">删除(<span id="selectedCount">0</span>)</button></span></div><div id="records"><div class="ld">点击刷新</div></div></div>
-        <div class="section"><div class="section-h">管理</div><div id="loginSection"><div class="pw"><input type="password" class="input" id="loginPassword" placeholder="管理密码"><button class="btn btn-p" onclick="login()">登录</button></div></div><div id="adminSection" style="display:none;"><div class="btns"><button class="btn btn-r" onclick="clearRecords()">清空全部</button><button class="btn btn-g" onclick="logout()">退出</button></div></div></div>
-        <div class="ft"><a href="/records">/records</a> · <a href="/stats">/stats</a> · <a href="https://github.com/huanxherta/syemamalielie">GitHub</a></div>
-    </div>
-    <script>
-        function toggleTheme(){document.body.classList.toggle('dark');localStorage.setItem('theme',document.body.classList.contains('dark')?'dark':'light')}
-        if(localStorage.getItem('theme')==='dark')document.body.classList.add('dark');
-        window.allRecords=[];window.crg='';
-        function getGroupName(r){return(r.group_name&&r.group_name.trim())||'群'+r.group_id}
-        function switchRT(t){window.crg=t==='all'?'':document.getElementById('recordGroupSelect').value;filterRecords()}
-        function filterRecords(){const kw=document.getElementById('searchInput').value.toLowerCase();let rs=window.allRecords||[];if(window.crg)rs=rs.filter(r=>r.group_id===window.crg);if(kw)rs=rs.filter(r=>(r.message||'').toLowerCase().includes(kw)||(r.user_name||'').toLowerCase().includes(kw)||getGroupName(r).toLowerCase().includes(kw)||(r.reason||'').toLowerCase().includes(kw));renderRecords(rs.slice(-50).reverse(),rs.length)}
-        function renderRecords(rs,total){const lg=!!window.adminToken;document.getElementById('records').innerHTML=rs.length?rs.map((r,i)=>`<div class="row" id="record-${total-1-i}">${lg?`<input type="checkbox" class="cb" data-index="${total-1-i}" onchange="toggleSelect(${total-1-i})">`:''}<img class="r-av" src="https://q.qlogo.cn/headimg_dl?dst_uin=${r.user_id}&spec=640" onerror="this.style.display='none'"><div class="row-c"><div class="row-t">${r.user_name}</div><div class="row-s">${getGroupName(r)} · ${new Date(r.time).toLocaleString('zh-CN',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}</div><div style="font-size:15px;color:var(--c-label);margin-top:6px;word-break:break-all;">${r.message}</div><div style="font-size:13px;color:var(--c-orange);margin-top:4px;">${r.reason}</div></div>${lg?`<button class="del" onclick="deleteSingle(${total-1-i})">删除</button>`:''}</div>`).join(''):'<div class="ld">暂无记录</div>'}
-        function updateRGS(){const m={};(window.allRecords||[]).forEach(r=>{if(!m[r.group_id])m[r.group_id]=getGroupName(r)});const s=document.getElementById('recordGroupSelect');s.innerHTML='<option value="">选择群聊</option>';Object.entries(m).forEach(([id,n])=>{s.innerHTML+=`<option value="${id}">${n}</option>`})}
-        async function loadRecords(){try{const{data}=await(await fetch('/records')).json();const nm={};(data||[]).forEach(r=>{if(r.group_name&&r.group_name.trim())nm[r.group_id]=r.group_name.trim()});(data||[]).forEach(r=>{if(!r.group_name&&nm[r.group_id])r.group_name=nm[r.group_id]});window.allRecords=data||[];window.selectedIndices=new Set();document.getElementById('total').textContent=data.length;document.getElementById('users').textContent=new Set(data.map(r=>r.user_id)).size;document.getElementById('groups').textContent=new Set(data.map(r=>r.group_id)).size;updateRGS();updateGS();filterRecords();updateDB();updateRanking('global')}catch(e){document.getElementById('records').innerHTML='<div class="ld">加载失败</div>'}}
-        function toggleSelect(i){window.selectedIndices.has(i)?window.selectedIndices.delete(i):window.selectedIndices.add(i);updateDB()}
-        function selectAll(){document.querySelectorAll('.cb').forEach(c=>{c.checked=true;window.selectedIndices.add(+c.dataset.index)});updateDB()}
-        function selectNone(){document.querySelectorAll('.cb').forEach(c=>c.checked=false);window.selectedIndices.clear();updateDB()}
-        function updateDB(){const n=window.selectedIndices?.size||0;document.getElementById('selectedCount').textContent=n;document.getElementById('deleteSelectedBtn').style.display=n?'inline-block':'none'}
-        async function deleteSingle(i){if(!window.adminToken)return showToast('请先登录','error');if(!confirm('确定删除？'))return;await doDelete([i])}
-        async function deleteSelected(){if(!window.adminToken)return showToast('请先登录','error');if(!window.selectedIndices.size)return showToast('请选择','error');if(!confirm('删除'+window.selectedIndices.size+'条？'))return;await doDelete([...window.selectedIndices])}
-        async function doDelete(idx){try{const{code,msg}=await(await fetch('/delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:window.adminToken,indices:idx})})).json();if(!code){showToast(msg,'success');loadRecords()}else{showToast(msg,'error');if(msg.includes('登录'))logout()}}catch(e){showToast('失败','error')}}
-        function switchTab(t){if(t==='global')document.getElementById('groupSelect').value='';updateRanking(t)}
-        function maskQQ(q){const s=String(q);return s.length<=4?s:s.slice(0,3)+'***'+s.slice(-3)}
-        function updateRanking(type){let rs=window.allRecords||[];if(type==='group'){const g=document.getElementById('groupSelect').value;rs=g?rs.filter(r=>r.group_id===g):[]}const st={};rs.forEach(r=>{if(!st[r.user_id])st[r.user_id]={qq:r.user_id,name:r.user_name,count:0,groups:{}};st[r.user_id].count++;st[r.user_id].groups[r.group_id]=getGroupName(r)});const sorted=Object.entries(st).sort((a,b)=>b[1].count-a[1].count).slice(0,10);document.getElementById('ranking').innerHTML=sorted.length?sorted.map(([uid,u],i)=>`<div class="row"><div class="badge r${i<3?i+1:'o'}">${i+1}</div><img class="av" src="https://q.qlogo.cn/headimg_dl?dst_uin=${u.qq}&spec=640" onerror="this.style.display='none'"><div class="row-c"><div class="row-t">${u.name}</div><div class="row-s">${maskQQ(u.qq)} · ${Object.keys(u.groups).length}个群</div></div><div class="cnt">${u.count}<span>次</span></div></div>`).join(''):'<div class="ld">暂无数据</div>'}
-        function updateGS(){const m={};(window.allRecords||[]).forEach(r=>{if(!m[r.group_id])m[r.group_id]=getGroupName(r)});const s=document.getElementById('groupSelect');s.innerHTML='<option value="">选择群聊</option>';Object.entries(m).forEach(([id,n])=>{s.innerHTML+=`<option value="${id}">${n}</option>`})}
-        let adminToken=localStorage.getItem('adminToken')||'';window.adminToken=adminToken;
-        function checkLogin(){adminToken=localStorage.getItem('adminToken')||'';window.adminToken=adminToken;document.getElementById('loginSection').style.display=adminToken?'none':'block';document.getElementById('adminSection').style.display=adminToken?'block':'none';document.getElementById('adminBtns').style.display=adminToken?'inline':'none';loadRecords()}
-        async function login(){const pw=document.getElementById('loginPassword').value;if(!pw)return showToast('请输入密码','error');try{const{code,token,msg}=await(await fetch('/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pw})})).json();if(!code){adminToken=token;localStorage.setItem('adminToken',token);checkLogin();showToast('登录成功','success');document.getElementById('loginPassword').value=''}else showToast(msg,'error')}catch(e){showToast('失败','error')}}
-        function logout(){adminToken='';localStorage.removeItem('adminToken');checkLogin();showToast('已退出','success')}
-        function showToast(msg,type){const t=document.createElement('div');t.className='toast toast-'+type;t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),2000)}
-        async function clearRecords(){if(!confirm('清空全部？'))return;try{const{code,msg}=await(await fetch('/clear',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:adminToken})})).json();if(!code){showToast(msg,'success');loadRecords()}else{showToast(msg,'error');if(msg.includes('登录'))logout()}}catch(e){showToast('失败','error')}}
-        checkLogin();
-    </script>
-</body>
-</html>"""
+<div class="c">
+<div id="p-home" class="page on">
+<div class="hdr"><h1>监控</h1></div>
+<div class="sec"><div class="stats"><div class="stat"><div class="stat-n" id="total">-</div><div class="stat-l">总记录</div></div><div class="stat"><div class="stat-n" id="users">-</div><div class="stat-l">用户</div></div><div class="stat"><div class="stat-n" id="groups">-</div><div class="stat-l">群组</div></div></div></div>
+<div class="sec"><div class="sec-h">排行榜</div><div class="tabs"><button class="tab on" onclick="switchTab('global',this)">总榜</button><select class="sel" id="groupSelect" onchange="switchTab('group')"><option value="">选择群聊</option></select></div><div id="ranking"><div class="ld">加载中...</div></div></div>
+</div>
+<div id="p-record" class="page">
+<div class="hdr"><h1>记录</h1></div>
+<div class="sec"><div class="search"><span class="search-i">&#128269;</span><input class="input" id="searchInput" placeholder="搜索..." oninput="filterRecords()"></div><div class="tabs"><button class="tab on" onclick="switchRT('all',this)">全部</button><select class="sel" id="recordGroupSelect" onchange="switchRT('group')"><option value="">选择群聊</option></select></div><div class="btns"><button class="btn btn-g" onclick="loadRecords()">刷新</button><span id="adminBtns" style="display:none"><button class="btn btn-g" onclick="selectAll()">全选</button><button class="btn btn-g" onclick="selectNone()">取消</button><button class="btn btn-r" onclick="deleteSelected()" id="deleteSelectedBtn" style="display:none">删除(<span id="selectedCount">0</span>)</button></span></div><div id="records"><div class="ld">点击刷新</div></div></div>
+</div>
+<div id="p-setting" class="page">
+<div class="hdr"><h1>设置</h1></div>
+<div class="sec"><div class="sec-h">管理</div><div id="loginSection"><div class="pw"><input type="password" class="input" id="loginPassword" placeholder="管理密码"><button class="btn btn-p" onclick="login()">登录</button></div></div><div id="adminSection" style="display:none"><div class="btns"><button class="btn btn-r" onclick="clearRecords()">清空全部</button><button class="btn btn-g" onclick="logout()">退出</button></div></div></div>
+<div class="sec"><div class="sec-h">API</div><div class="row" onclick="location.href='/records'"><div class="row-c"><div class="row-t">/records</div><div class="row-s">获取记录</div></div></div><div class="row" onclick="location.href='/stats'"><div class="row-c"><div class="row-t">/stats</div><div class="row-s">获取统计</div></div></div></div>
+</div>
+</div>
+<div class="tabbar"><button class="tabbar-i on" onclick="switchPage('home',this)"><span class="tabbar-ic">&#128200;</span><span class="tabbar-l">概览</span></button><button class="tabbar-i" onclick="switchPage('record',this)"><span class="tabbar-ic">&#128196;</span><span class="tabbar-l">记录</span></button><button class="tabbar-i" onclick="switchPage('setting',this)"><span class="tabbar-ic">&#9881;</span><span class="tabbar-l">设置</span></button></div>
+<script>
+function switchPage(p,el){document.querySelectorAll('.page').forEach(x=>x.classList.remove('on'));document.querySelectorAll('.tabbar-i').forEach(x=>x.classList.remove('on'));document.getElementById('p-'+p).classList.add('on');el.classList.add('on')}
+window.allRecords=[];window.crg='';
+function switchRT(t,el){window.crg=t==='all'?'':document.getElementById('recordGroupSelect').value;if(el){document.querySelectorAll('#p-record .tab').forEach(x=>x.classList.remove('on'));el.classList.add('on')}filterRecords()}
+function filterRecords(){const kw=document.getElementById('searchInput').value.toLowerCase();let rs=window.allRecords||[];if(window.crg)rs=rs.filter(r=>r.group_id===window.crg);if(kw)rs=rs.filter(r=>(r.message||'').toLowerCase().includes(kw)||(r.user_name||'').toLowerCase().includes(kw)||r.group_id.toString().includes(kw)||(r.reason||'').toLowerCase().includes(kw));renderRecords(rs.slice(-50).reverse(),rs.length)}
+function renderRecords(rs,total){const lg=!!window.adminToken;document.getElementById('records').innerHTML=rs.length?rs.map((r,i)=>`<div class="row" id="record-${total-1-i}">${lg?`<input type="checkbox" class="cb" data-index="${total-1-i}" onchange="toggleSelect(${total-1-i})">`:''}<img class="r-av" src="https://q.qlogo.cn/headimg_dl?dst_uin=${r.user_id}&spec=640" onerror="this.style.display='none'"><div class="row-c"><div class="row-t">${r.user_name}</div><div class="row-s">群${r.group_id} · ${new Date(r.time).toLocaleString('zh-CN',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}</div><div style="font-size:15px;color:var(--label);margin-top:6px;word-break:break-all">${r.message}</div><div style="font-size:13px;color:var(--orange);margin-top:4px">${r.reason}</div></div>${lg?`<button class="del" onclick="deleteSingle(${total-1-i})">删除</button>`:''}</div>`).join(''):'<div class="ld">暂无记录</div>'}
+function updateRGS(){const m={};(window.allRecords||[]).forEach(r=>{m[r.group_id]=1});const s=document.getElementById('recordGroupSelect');s.innerHTML='<option value="">选择群聊</option>';Object.keys(m).forEach(id=>{s.innerHTML+=`<option value="${id}">群${id}</option>`})}
+async function loadRecords(){try{const{data}=await(await fetch('/records')).json();window.allRecords=data||[];window.selectedIndices=new Set();document.getElementById('total').textContent=data.length;document.getElementById('users').textContent=new Set(data.map(r=>r.user_id)).size;document.getElementById('groups').textContent=new Set(data.map(r=>r.group_id)).size;updateRGS();updateGS();filterRecords();updateDB();updateRanking('global')}catch(e){document.getElementById('records').innerHTML='<div class="ld">加载失败</div>'}}
+function toggleSelect(i){window.selectedIndices.has(i)?window.selectedIndices.delete(i):window.selectedIndices.add(i);updateDB()}
+function selectAll(){document.querySelectorAll('.cb').forEach(c=>{c.checked=true;window.selectedIndices.add(+c.dataset.index)});updateDB()}
+function selectNone(){document.querySelectorAll('.cb').forEach(c=>c.checked=false);window.selectedIndices.clear();updateDB()}
+function updateDB(){const n=window.selectedIndices?.size||0;document.getElementById('selectedCount').textContent=n;document.getElementById('deleteSelectedBtn').style.display=n?'inline-block':'none'}
+async function deleteSingle(i){if(!window.adminToken)return showToast('请先登录','error');if(!confirm('确定删除？'))return;await doDelete([i])}
+async function deleteSelected(){if(!window.adminToken)return showToast('请先登录','error');if(!window.selectedIndices.size)return showToast('请选择','error');if(!confirm('删除'+window.selectedIndices.size+'条？'))return;await doDelete([...window.selectedIndices])}
+async function doDelete(idx){try{const{code,msg}=await(await fetch('/delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:window.adminToken,indices:idx})})).json();if(!code){showToast(msg,'success');loadRecords()}else{showToast(msg,'error');if(msg.includes('登录'))logout()}}catch(e){showToast('失败','error')}}
+function switchTab(t,el){if(t==='global')document.getElementById('groupSelect').value='';if(el){document.querySelectorAll('#p-home .tab').forEach(x=>x.classList.remove('on'));el.classList.add('on')}updateRanking(t)}
+function maskQQ(q){const s=String(q);return s.length<=4?s:s.slice(0,3)+'***'+s.slice(-3)}
+function updateRanking(type){let rs=window.allRecords||[];if(type==='group'){const g=document.getElementById('groupSelect').value;rs=g?rs.filter(r=>r.group_id===g):[]}const st={};rs.forEach(r=>{if(!st[r.user_id])st[r.user_id]={qq:r.user_id,name:r.user_name,count:0,groups:{}};st[r.user_id].count++;st[r.user_id].groups[r.group_id]=1});const sorted=Object.entries(st).sort((a,b)=>b[1].count-a[1].count).slice(0,10);document.getElementById('ranking').innerHTML=sorted.length?sorted.map(([uid,u],i)=>`<div class="row"><div class="badge r${i<3?i+1:'o'}">${i+1}</div><img class="av" src="https://q.qlogo.cn/headimg_dl?dst_uin=${u.qq}&spec=640" onerror="this.style.display='none'"><div class="row-c"><div class="row-t">${u.name}</div><div class="row-s">${maskQQ(u.qq)} · ${Object.keys(u.groups).length}个群</div></div><div class="cnt">${u.count}<span>次</span></div></div>`).join(''):'<div class="ld">暂无数据</div>'}
+function updateGS(){const m={};(window.allRecords||[]).forEach(r=>{m[r.group_id]=1});const s=document.getElementById('groupSelect');s.innerHTML='<option value="">选择群聊</option>';Object.keys(m).forEach(id=>{s.innerHTML+=`<option value="${id}">群${id}</option>`})}
+let adminToken=localStorage.getItem('adminToken')||'';window.adminToken=adminToken;
+function checkLogin(){adminToken=localStorage.getItem('adminToken')||'';window.adminToken=adminToken;document.getElementById('loginSection').style.display=adminToken?'none':'block';document.getElementById('adminSection').style.display=adminToken?'block':'none';document.getElementById('adminBtns').style.display=adminToken?'inline':'none';loadRecords()}
+async function login(){const pw=document.getElementById('loginPassword').value;if(!pw)return showToast('请输入密码','error');try{const{code,token,msg}=await(await fetch('/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pw})})).json();if(!code){adminToken=token;localStorage.setItem('adminToken',token);checkLogin();showToast('登录成功','success');document.getElementById('loginPassword').value=''}else showToast(msg,'error')}catch(e){showToast('失败','error')}}
+function logout(){adminToken='';localStorage.removeItem('adminToken');checkLogin();showToast('已退出','success')}
+function showToast(msg,type){const t=document.createElement('div');t.className='toast toast-'+type;t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),2000)}
+async function clearRecords(){if(!confirm('清空全部？'))return;try{const{code,msg}=await(await fetch('/clear',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:adminToken})})).json();if(!code){showToast(msg,'success');loadRecords()}else{showToast(msg,'error');if(msg.includes('登录'))logout()}}catch(e){showToast('失败','error')}}
+checkLogin();
+</script>
+</body></html>"""
         return web.Response(text=html, content_type="text/html")
 
     async def _handle_get_records(self, request: web.Request) -> web.Response:
